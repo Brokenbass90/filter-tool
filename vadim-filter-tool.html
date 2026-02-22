@@ -1,0 +1,3073 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vadim-filter-tool (single HTML)</title>
+  <style>
+/* ====== styles.css (original) ====== */
+:root{
+  --bg:#0b0c10;
+  --card:#11131a;
+  --border:#24283a;
+  --text:#e8eaf2;
+  --muted:#a0a4b8;
+  --accent:#6ee7ff;
+  --chip:#1c233a;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+.container{max-width:1100px;margin:0 auto;padding:16px}
+.topbar{position:sticky;top:0;background:rgba(11,12,16,.9);backdrop-filter: blur(10px);border-bottom:1px solid var(--border);z-index:50}
+.topbar__inner{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand__title{font-weight:700;font-size:16px}
+.brand__subtitle{font-size:12px;color:var(--muted)}
+.nav{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
+.nav a{color:var(--muted);text-decoration:none}
+.nav a:hover{color:var(--text)}
+.nav .nav__sep{opacity:.45;margin:0 4px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;margin:12px 0}
+.panel--note{margin-top:16px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.input,.select, textarea{
+  background:#0f1120;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  outline:none;
+}
+.input{flex:1;min-width:260px}
+.select{min-width:180px}
+.btn{
+  background:var(--accent);
+  color:#001018;
+  border:none;
+  border-radius:12px;
+  padding:10px 12px;
+  cursor:pointer;
+  font-weight:700;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+}
+.btn--ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn--danger{background:rgba(255, 90, 90, 0.18); color:var(--text); border:1px solid rgba(255,255,255,0.12)}
+.btn:hover{opacity:.92}
+.grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap:12px;
+  margin:14px 0;
+}
+.card{
+  display:block;
+  text-decoration:none;
+  color:inherit;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px;
+  position:relative;
+  transition: transform .08s ease, border-color .08s ease;
+}
+.card:hover{transform: translateY(-2px);border-color:#3a4162}
+.card__title{font-weight:800;font-size:15px;margin-bottom:8px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card__row{font-size:12px;color:var(--text);margin:4px 0}
+.card__row--address{color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.label{color:var(--muted);margin-right:6px}
+.chip{
+  position:absolute;top:10px;right:10px;
+  background:var(--chip);
+  border:1px solid var(--border);
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  color:var(--muted);
+}
+.chip--big{font-size:13px;padding:8px 12px}
+.small{font-size:11px}
+.muted{color:var(--muted)}
+.h1{margin:0 0 6px 0;font-size:18px}
+.detail__header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
+.detail__grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.detail__item{background:#0f1120;border:1px solid var(--border);border-radius:14px;padding:12px}
+.detail__item--wide{grid-column:1 / -1}
+.statusbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.footer{border-top:1px solid var(--border);padding:12px 0;margin-top:24px}
+code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-radius:10px}
+.flashwrap{margin:12px 0;display:flex;flex-direction:column;gap:8px}
+.flash{border:1px solid var(--border);background:var(--card);border-radius:14px;padding:10px 12px;font-size:13px}
+.flash--ok{border-color:rgba(110,231,255,.35)}
+.flash--error{border-color:rgba(255,110,110,.35)}
+.upload{display:block}
+.dropzone{
+  position:relative;
+  border:2px dashed var(--border);
+  border-radius:18px;
+  padding:18px;
+  background:#0f1120;
+}
+.dropzone--over{border-color:rgba(110,231,255,.7)}
+.dropzone__title{font-weight:800;margin-bottom:6px}
+.dropzone__subtitle{margin-bottom:12px}
+.dropzone__actions{margin-top:10px}
+.file{position:absolute;inset:0;opacity:0;cursor:pointer;pointer-events:none}
+.filelist{white-space:pre-wrap;margin-top:10px;font-size:12px}
+.check{display:flex;gap:10px;align-items:center;margin-top:12px;color:var(--muted);font-size:13px}
+.check input{transform:scale(1.1)}
+.progress{height:8px;background:#0f1120;border:1px solid var(--border);border-radius:999px;overflow:hidden;margin-top:6px}
+.progress__bar{height:100%;background:var(--accent);width:0%;transition:width .2s ease}
+.mt12{margin-top:12px}
+.tablewrap{overflow:auto;border-radius:16px;border:1px solid var(--border);background:var(--card)}
+.table{width:100%;border-collapse:collapse;min-width:900px}
+.table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;font-size:12px}
+.cell-scroll{max-height:96px;overflow:auto;white-space:pre-wrap;line-height:1.25;word-break:break-word;overflow-wrap:anywhere}
+.table th{position:sticky;top:0;background:rgba(17,19,26,.95);text-align:left;font-size:12px;color:var(--muted)}
+.table tr:hover td{background:rgba(255,255,255,.02)}
+.chip--inline{position:static;display:inline-flex}
+
+/* ====== page-specific (ported from templates) ====== */
+.page{display:none}
+.page.is-active{display:block}
+
+.badgeCount { padding: 8px 12px; border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; background: rgba(255,255,255,0.04); }
+
+.cards { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.card2 { border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 14px; background: rgba(255,255,255,0.04); }
+.card2.new { border-color: rgba(140, 255, 200, 0.35); box-shadow: 0 0 0 1px rgba(140, 255, 200, 0.15) inset; }
+
+/* --- v13: cleaner cards + messenger actions --- */
+.card2 .details{display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.10);}
+.card2.is-open .details{display:block;}
+.company{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; overflow:hidden;}
+.v.trunc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical; overflow:hidden;}
+.card2.is-open .v.trunc{display:block; -webkit-line-clamp:unset; overflow:visible;}
+.btn--mini{padding:6px 10px !important; border-radius:10px !important; font-size:13px;}
+.btn--wa{border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.10);}
+.btn--tg{border-color: rgba(56,189,248,0.35); background: rgba(56,189,248,0.10);}
+.card-actions{gap:6px;}
+.k{width:110px;}
+.card-header{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:start; }
+.card-header-left{ display:flex; gap:10px; min-width:0; }
+.card-titlewrap{ min-width:0; }
+.card-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; flex-shrink:0; }
+.card-actions .btn{ white-space:nowrap; }
+.company{
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.15;
+  letter-spacing: .2px;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+@media (max-width: 520px){
+  .card-header{ grid-template-columns: 1fr; }
+  .card-actions{ justify-content:flex-start; }
+}
+.badge { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); opacity: 0.9; }
+.row { display:flex; gap: 10px; margin-top: 8px; }
+.k { width: 92px; opacity: 0.7; }
+.v { flex:1; word-break: break-word; }
+.checkboxWrap { display:flex; align-items:center; gap:8px; opacity: 0.9; }
+.card-select { width: 18px; height: 18px; margin-top: 2px; }
+
+.tag{ background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); padding:10px 12px; border-radius:12px; min-width: 180px; }
+
+.tag.obj strong{display:block; max-height:4.2em; overflow:auto; padding-right:6px;}
+.notice{border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);border-radius:14px;padding:10px 12px;font-size:13px}
+
+.toast{
+  position:fixed;right:16px;bottom:16px;
+  background:#111827;color:white;padding:10px 12px;
+  border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);
+  z-index:9999;font-size:13px;max-width:420px;
+  opacity:0;transform: translateY(6px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+.toast.is-on{opacity:1;transform: translateY(0);}
+  
+
+  /* v11: improve card readability for long text */
+  .detail__item{align-items:flex-start;}
+  .detail__k{min-width:140px;flex:0 0 140px;}
+  .detail__v{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;line-height:1.35;}
+  .detail__v code, .detail__v pre{white-space:pre-wrap;}
+  .card{padding:14px 14px;}
+  @media (max-width: 900px){
+    .detail__k{min-width:110px;flex-basis:110px;}
+  }
+</style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <div class="brand">
+        <div class="brand__title">vadim-filter-tool</div>
+        <div class="brand__subtitle">ЕИС → импорт → карточки → экспорт (без Python, один HTML)</div>
+      </div>
+      <nav class="nav">
+        <a href="#cards" data-nav="cards">Карточки</a>
+        <a href="#import" data-nav="import">Импорт</a>
+        <a href="#message" data-nav="message">Сообщение</a>
+        <a href="#queue" data-nav="queue">Очередь</a>
+        <span class="nav__sep">•</span>
+        <a href="#" id="downloadAllExcel">Скачать Excel</a>
+        <a href="#" id="downloadAllCsv">Скачать CSV</a>
+        <a href="#" id="downloadDbJson">Скачать БД</a>
+        <label class="btn btn--ghost" style="padding:8px 10px;border-radius:12px;cursor:pointer">
+          Импорт БД
+          <input id="importDbJson" type="file" accept=".json" style="display:none" />
+        </label>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="flashwrap" class="flashwrap"></div>
+
+    <!-- IMPORT -->
+    <section id="page-import" class="page panel">
+      <h1 class="h1">Импорт файлов (.html или .zip)</h1>
+      <p class="muted">Перетащите файлы сюда или выберите их кнопкой. Можно загрузить ZIP-архив с множеством HTML или PDF (экспериментально).</p>
+
+      <div class="upload">
+        <div id="dropzone" class="dropzone">
+          <div class="dropzone__title">Перетащите .html / .zip / .pdf сюда</div>
+          <div class="dropzone__subtitle muted">или нажмите “Выбрать файлы”</div>
+          <input id="fileInput" class="file" type="file" multiple accept=".html,.htm,.zip,.pdf,application/pdf" />
+          <div class="dropzone__actions">
+            <button class="btn" type="button" id="pickBtn">Выбрать файлы</button>
+            <button class="btn" type="button" id="importBtn">Импортировать</button>
+          </div>
+          <div id="fileList" class="filelist muted"></div>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" id="allowNonMobile" />
+          <span>Разрешить НЕ-мобильные номера (для теста)</span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="allowNoEmail" checked />
+          <span>Разрешить без email (если в форме пусто)</span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="allowNoInn" />
+          <span>Разрешить без ИНН</span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="allowNoPhone" />
+          <span>Разрешить без телефона</span>
+        </label>
+
+	        <label class="check">
+	          <input type="checkbox" id="allowPdfOcr" checked />
+	          <span>Распознавать сканы PDF через локальный OCR-сервер</span>
+	          <span id="ocrStatus" class="muted" style="margin-left:10px;font-size:12px;"></span>
+	        </label>
+        <div class="muted" style="margin:6px 0 6px 26px;font-size:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span>OCR режим:</span>
+          <select id="ocrMode" class="select" style="height:28px;font-size:12px;">
+            <option value="first">Первые страницы</option>
+            <option value="last">Последние страницы</option>
+            <option value="requisites">Реквизиты (последние 2)</option>
+            <option value="all">Все страницы</option>
+          </select>
+          <span>OCR страницы:</span>
+          <input id="ocrPageLimit" class="input" type="number" min="0" max="25" value="2" style="width:70px;height:28px;font-size:12px;" />
+          <span>0 = все</span>
+        </div>
+        <div class="muted" style="margin:0 0 10px 26px;font-size:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span>OCR качество (масштаб):</span>
+          <input id="ocrScale" class="input" type="number" min="1" max="3.5" step="0.25" value="2.0" style="width:80px;height:28px;font-size:12px;" />
+          <span>1.0–3.5 (чем больше — тем точнее и дольше)</span>
+        </div>
+        <div class="muted" style="margin:6px 0 10px 26px;font-size:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span>OCR адрес:</span>
+          <input id="ocrBaseInput" class="input" style="max-width:280px;height:28px;font-size:12px;" placeholder="http://127.0.0.1:17871" />
+          <button class="btn btn--sm" type="button" id="ocrBaseSave">Сохранить</button>
+          <button class="btn btn--sm" type="button" id="ocrBaseReset">Сбросить</button>
+          <button class="btn btn--sm" type="button" id="ocrBaseTest">Проверить</button>
+        </div>
+
+        <div id="importProgressWrap" class="panel panel--note" style="display:none;padding:10px 12px;">
+          <div id="importProgressText" class="muted" style="font-size:12px;">Импорт…</div>
+          <div class="progress"><div id="importProgressBar" class="progress__bar"></div></div>
+        </div>
+
+        <div class="panel panel--note">
+          <div class="muted">
+            Примечание: ZIP-импорт требует современный браузер (Chrome/Edge). Если ZIP не читается — распакуйте архив и загрузите HTML-файлы напрямую.
+          </div>
+        </div>
+
+        <div class="panel" id="importReport" style="display:none"></div>
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section id="page-cards" class="page">
+      <form class="filters panel" id="filtersForm">
+        <input class="input" type="text" id="qInput" placeholder="Поиск: компания, ФИО, телефон, почта, ИНН, адрес" />
+        <select class="select" id="statusSel">
+          <option value="all">Все статусы</option>
+          <option value="new">Только new</option>
+          <option value="sent">Только sent</option>
+          <option value="interested">Только interested</option>
+          <option value="not_relevant">Только not_relevant</option>
+          <option value="no_answer">Только no_answer</option>
+          <option value="followup_3d">Только followup_3d</option>
+          <option value="ok">Только ok</option>
+          <option value="queued">Только queued</option>
+          <option value="contacted">Только contacted</option>
+          <option value="replied">Только replied</option>
+          <option value="ignore">Только ignore</option>
+        </select>
+        <select class="select" id="viewSel">
+          <option value="cards">Карточки</option>
+          <option value="table">Таблица</option>
+        </select>
+        <button class="btn" type="submit">Применить</button>
+        <button class="btn btn--ghost" type="button" id="resetBtn">Сброс</button>
+
+        <span class="badgeCount">Выбрано: <b id="selectedCount">0</b></span>
+        <button class="btn btn--ghost" type="button" id="selectAllBtn">Выбрать все</button>
+        <button class="btn btn--danger" type="button" id="clearSelectionBtn">Снять выбор</button>
+        <button class="btn btn--danger" type="button" id="deleteSelectedBtn">Удалить выбранные</button>
+        <button class="btn btn--danger" type="button" id="deleteAllBtn">Удалить все</button>
+        <button class="btn btn--ghost" type="button" id="exportSelectedExcel">Экспорт выбранных Excel</button>
+        <button class="btn btn--ghost" type="button" id="exportSelectedCsv">Экспорт выбранных CSV</button>
+      </form>
+
+      <div id="cardsWrap"></div>
+    </section>
+
+    <!-- MESSAGE -->
+    <section id="page-message" class="page">
+      <div class="panel" style="max-width:980px">
+        <h2 style="margin-top:0">Сообщение</h2>
+        <div class="muted" style="margin-bottom: 10px;">
+          Шаблон хранится локально (localStorage). Используйте плейсхолдеры ниже — кликом они копируются в буфер.
+        </div>
+
+        <label class="muted">Текст сообщения</label>
+        <textarea id="msgTemplate" rows="8" style="width:100%; margin-top:6px;"></textarea>
+        <label class="muted" style="display:block; margin-top:10px;">HTML шаблон письма (опционально)</label>
+        <textarea id="msgTemplateHtml" rows="8" style="width:100%; margin-top:6px;" placeholder="<html><body><h3>Здравствуйте, {company_name}</h3><p>...</p></body></html>"></textarea>
+        <label class="check" style="margin-top:8px;">
+          <input type="checkbox" id="sendAsHtml" />
+          <span>Отправлять как HTML (если заполнен HTML шаблон)</span>
+        </label>
+
+        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;">
+          <button id="saveTemplateBtn" class="btn" type="button">Сохранить</button>
+          <button id="checkEmailLimitBtn" class="btn btn--ghost" type="button">Проверить лимит Email</button>
+          <button id="sendEmailSelectedBtn" class="btn" type="button">Отправить Email выбранным</button>
+          <button id="exportMsgCsvBtn" class="btn" type="button">Скачать CSV (сообщения для выбранных)</button>
+          <button id="exportMsgXlsBtn" class="btn" type="button">Скачать Excel (сообщения для выбранных)</button>
+          <span id="selCountMsg" class="muted"></span>
+        </div>
+
+        <div class="panel panel--note" style="margin-top:12px">
+          <div class="muted" style="margin-bottom:8px">Настройки Email (Gmail SMTP + App Password)</div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:8px;">
+            <input id="smtpUser" class="input" placeholder="Gmail логин (example@gmail.com)" />
+            <input id="smtpPass" class="input" type="password" placeholder="App Password (16 символов)" />
+            <input id="smtpFromName" class="input" placeholder="Имя отправителя (опционально)" />
+            <input id="smtpSubjectTpl" class="input" placeholder="Тема письма с плейсхолдерами" />
+            <input id="smtpDailyLimit" class="input" type="number" min="1" max="500" value="250" placeholder="Лимит в день" />
+            <input id="smtpDelayMs" class="input" type="number" min="0" max="10000" value="1200" placeholder="Пауза между письмами (мс)" />
+          </div>
+          <div class="muted" id="emailLimitHint" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="max-width:980px">
+        <h3 style="margin-top:0">Плейсхолдеры</h3>
+        <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+          <div class="tag" role="button" tabindex="0" data-copy="{company_name}"><strong>{company_name}</strong><div class="muted" style="font-size:12px;">Компания</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{ip}"><strong>{ip}</strong><div class="muted" style="font-size:12px;">ИП</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{supplier_fio}"><strong>{supplier_fio}</strong><div class="muted" style="font-size:12px;">ФИО поставщика</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{director_fio}"><strong>{director_fio}</strong><div class="muted" style="font-size:12px;">ФИО руководителя</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{inn}"><strong>{inn}</strong><div class="muted" style="font-size:12px;">ИНН</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{phone}"><strong>{phone}</strong><div class="muted" style="font-size:12px;">Телефон</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{email}"><strong>{email}</strong><div class="muted" style="font-size:12px;">Email</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{address}"><strong>{address}</strong><div class="muted" style="font-size:12px;">Адрес</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{purchase_object_name}"><strong>{purchase_object_name}</strong><div class="muted" style="font-size:12px;">Название объекта закупки</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{source_file}"><strong>{source_file}</strong><div class="muted" style="font-size:12px;">Источник</div></div>
+        </div>
+        <div class="muted" style="margin-top: 10px;">
+          Примечание про Telegram: бот не может написать человеку “первым”. Сейчас это режим “подготовки”: вы копируете текст и отправляете вручную.
+        </div>
+      </div>
+    </section>
+
+    <!-- QUEUE -->
+    <section id="page-queue" class="page">
+      <div class="panel" style="max-width:980px">
+        <h2 style="margin-top:0">Очередь</h2>
+        <div class="muted" style="margin-bottom: 10px;">
+          Очередь берёт выбранные карточки (галочки на вкладке “Карточки”) и показывает их по одной.
+          Шаблон сообщения берётся из вкладки “Сообщение”.
+        </div>
+
+        <div id="queueEmpty" class="muted" style="display:none;">
+          Нет выбранных карточек. Вернитесь на <a href="#cards">“Карточки”</a>, выберите карточки и снова откройте очередь.
+        </div>
+
+        <div id="queueUi" style="display:none;">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <span class="badge" id="progressBadge">0/0</span>
+            <button class="btn" type="button" id="prevBtn">← Назад</button>
+            <button class="btn" type="button" id="nextBtn">Дальше →</button>
+            <button class="btn" type="button" id="copyBtn">Copy message</button>
+            <a class="btn btn--ghost" id="openCardLink" href="#cards" rel="noopener">Открыть карточку</a>
+          </div>
+
+          <div class="panel" style="margin-top: 12px;">
+            <div style="display:flex; gap:10px; align-items:flex-start; justify-content: space-between;">
+              <div>
+                <div style="font-weight:700; font-size: 15px; line-height: 1.15; overflow-wrap: break-word; word-break: normal;" id="qCompany"></div>
+                <div class="muted" style="margin-top: 4px;" id="qDirector"></div>
+              </div>
+              <div><span class="badge" id="qStatus"></span></div>
+            </div>
+
+            <div style="margin-top: 10px; display:grid; grid-template-columns: 120px 1fr; gap: 8px;">
+              <div class="muted">Телефон</div><div id="qPhone"></div>
+              <div class="muted">Email</div><div id="qEmail"></div>
+              <div class="muted">ИНН</div><div id="qInn"></div>
+              <div class="muted">Адрес</div><div id="qAddress"></div>
+              <div class="muted">Источник</div><div class="muted" id="qSource"></div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+            <button class="btn" type="button" data-set-status="sent">Отправлено</button>
+            <button class="btn" type="button" data-set-status="interested">Заинтересован</button>
+            <button class="btn" type="button" data-set-status="not_relevant">Не актуально</button>
+            <button class="btn" type="button" data-set-status="no_answer">Нет ответа</button>
+            <button class="btn" type="button" data-set-status="followup_3d">Повторить через 3 дня</button>
+            <button class="btn btn--danger" type="button" id="clearQueuePos">Сбросить позицию очереди</button>
+          </div>
+
+          <div class="muted" style="margin-top: 10px;">
+            Подсказка: в Telegram нельзя написать человеку “первым” от бота. Сейчас это просто удобный “пролистыватель” + копирование текста.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="muted">
+        Подсказка: для Google Sheets — скачайте Excel/CSV и импортируйте (Файл → Импорт).
+        Excel в этом single-HTML варианте — это .xls (таблица), Excel может показать предупреждение — это нормально.
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+<script>
+/* ===========================
+   Constants / Keys
+=========================== */
+const APP = {
+  FILTER_KEY: 'sb_filters_v1',
+  SEL_KEY: 'sb_selected_ids_v1',
+  TEMPLATE_KEY: 'sb_message_template_v1',
+  TEMPLATE_HTML_KEY: 'sb_message_template_html_v1',
+  SMTP_KEY: 'sb_smtp_settings_v1',
+  QUEUE_POS_KEY: 'sb_queue_pos_v1',
+  IMPORT_REPORT_KEY: 'sb_last_import_report_v1',
+  DB_EXPORT_VERSION: 1,
+};
+
+const STATUS_LIST = ['new','sent','interested','not_relevant','no_answer','followup_3d','queued','contacted','replied','ignore','ok'];
+const MAX_PAGES = 25;
+
+const DEFAULT_TEMPLATE = `Здравствуйте! Мы занимаемся поставками из Китая под заказ (поиск, проверка, закупка, доставка).
+
+Подскажите, актуальны ли для вас поставки в ближайший месяц?
+
+Компания: {company_name}
+ИНН: {inn}
+Контакт: {director_fio}
+Телефон: {phone}
+Email: {email}
+
+Если да — что именно нужно и куда доставлять (город/страна)?`;
+
+/* ===========================
+   Small UI helpers
+=========================== */
+function flash(msg, kind='ok') {
+  const wrap = document.getElementById('flashwrap');
+  const el = document.createElement('div');
+  el.className = 'flash flash--' + (kind === 'error' ? 'error' : 'ok');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.remove(); }, 8000);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('is-on');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('is-on'), 1200);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      return true;
+    } catch (e2) {
+      return false;
+    }
+  }
+}
+
+/* ===========================
+   Storage (IndexedDB with fallback)
+=========================== */
+class SupplierStore {
+  constructor() {
+    this.mode = 'idb'; // idb | ls
+    this.db = null;
+    this.lsKey = 'sb_suppliers_ls_v1';
+  }
+
+  async init() {
+    // IndexedDB may fail on some file:// contexts. We'll fallback to localStorage.
+    try {
+      if (!('indexedDB' in window)) throw new Error('indexedDB not available');
+      this.db = await new Promise((resolve, reject) => {
+        const req = indexedDB.open('vadim-filter-tool-db', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('suppliers')) {
+            const store = db.createObjectStore('suppliers', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('inn', 'inn', { unique: true });
+            store.createIndex('phone_e164', 'phone_e164', { unique: true });
+            store.createIndex('status', 'status', { unique: false });
+            store.createIndex('extracted_at', 'extracted_at', { unique: false });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error('IDB open failed'));
+      });
+      this.mode = 'idb';
+    } catch (e) {
+      this.mode = 'ls';
+      this.db = null;
+      flash('Внимание: IndexedDB недоступен (возможно, вы открыли файл как file://). Данные будут храниться в localStorage и могут быть ограничены по объёму. Рекомендуется Chrome/Edge.', 'error');
+    }
+  }
+
+  _nowIso() {
+    return new Date().toISOString();
+  }
+
+  async _lsLoadAll() {
+    try { return JSON.parse(localStorage.getItem(this.lsKey) || '[]') || []; }
+    catch(e) { return []; }
+  }
+
+  async _lsSaveAll(arr) {
+    localStorage.setItem(this.lsKey, JSON.stringify(arr));
+  }
+
+  async getAll() {
+    if (this.mode === 'ls') return await this._lsLoadAll();
+    const db = this.db;
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('suppliers', 'readonly');
+      const store = tx.objectStore('suppliers');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getIds() {
+    const all = await this.getAll();
+    return all.map(x => x.id);
+  }
+
+  async getByIds(ids) {
+    const all = await this.getAll();
+    const set = new Set(ids.map(Number));
+    return all.filter(x => set.has(Number(x.id)));
+  }
+
+  async query({q='', status=''}) {
+    const all = await this.getAll();
+    const qq = (q || '').trim().toLowerCase();
+    const st = (status || '').trim();
+    return all
+      .filter(s => {
+        if (st && s.status !== st) return false;
+        if (!qq) return true;
+        const blob = [s.company_name, s.director_fio, s.phone_e164, s.email, s.inn, s.address, s.source_file].join(' ').toLowerCase();
+        return blob.includes(qq);
+      })
+      .sort((a,b) => String(b.extracted_at||'').localeCompare(String(a.extracted_at||'')));
+  }
+
+  async upsertMany(suppliers) {
+    if (!suppliers.length) return {inserted:0, updated:0};
+
+    if (this.mode === 'ls') {
+      const all = await this._lsLoadAll();
+      let inserted = 0, updated = 0;
+      for (const s of suppliers) {
+        const byInn = s.inn ? all.find(x => x.inn === s.inn) : null;
+        const byPhone = s.phone_e164 ? all.find(x => x.phone_e164 === s.phone_e164) : null;
+        const existing = byInn || byPhone;
+        if (existing) {
+          existing.company_name = s.company_name;
+          existing.director_fio = s.director_fio;
+          existing.phone_e164 = s.phone_e164;
+          existing.email = s.email;
+          existing.inn = s.inn || '';
+          existing.address = s.address;
+          existing.purchase_object_name = s.purchase_object_name || '';
+          existing.source_file = s.source_file;
+          existing.extracted_at = this._nowIso();
+          updated += 1;
+        } else {
+          const id = (Math.max(0, ...all.map(x => Number(x.id)||0)) + 1);
+          all.push({ id, ...s, extracted_at: this._nowIso(), status: 'new', notes: '' });
+          inserted += 1;
+        }
+      }
+      await this._lsSaveAll(all);
+      return {inserted, updated};
+    }
+
+    const db = this.db;
+    const now = this._nowIso();
+    const tx = db.transaction('suppliers', 'readwrite');
+    const store = tx.objectStore('suppliers');
+    const innIndex = store.index('inn');
+    const phoneIndex = store.index('phone_e164');
+
+    const p = async () => {
+      let inserted = 0, updated = 0;
+      for (const s of suppliers) {
+        const s2 = { ...s };
+        if (!s2.phone_e164) delete s2.phone_e164;
+        if (!s2.inn) delete s2.inn;
+        const existing = await new Promise((resolve) => {
+          if (!s2.inn) return resolve(null);
+          const r1 = innIndex.get(s2.inn);
+          r1.onsuccess = () => resolve(r1.result || null);
+          r1.onerror = () => resolve(null);
+        }) || await new Promise((resolve) => {
+          if (!s2.phone_e164) return resolve(null);
+          const r2 = phoneIndex.get(s2.phone_e164);
+          r2.onsuccess = () => resolve(r2.result || null);
+          r2.onerror = () => resolve(null);
+        });
+
+        if (existing) {
+          const keep = { status: existing.status || 'new', notes: existing.notes || '' };
+          const next = { ...existing, ...s2, ...keep, extracted_at: now };
+          await new Promise((resolve, reject) => {
+            const r = store.put(next);
+            r.onsuccess = () => resolve(true);
+            r.onerror = () => reject(r.error);
+          });
+          updated += 1;
+        } else {
+          const row = { ...s2, extracted_at: now, status: 'new', notes: '' };
+          await new Promise((resolve, reject) => {
+            const r = store.add(row);
+            r.onsuccess = () => resolve(true);
+            r.onerror = () => reject(r.error);
+          });
+          inserted += 1;
+        }
+      }
+      return {inserted, updated};
+    };
+
+    const res = await p().catch((e) => { throw e; });
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+    return res;
+  }
+
+  async deleteByIds(ids) {
+    ids = ids.map(Number).filter(Number.isFinite);
+    if (!ids.length) return;
+
+    if (this.mode === 'ls') {
+      const all = await this._lsLoadAll();
+      const set = new Set(ids);
+      await this._lsSaveAll(all.filter(x => !set.has(Number(x.id))));
+      return;
+    }
+
+    const db = this.db;
+    const tx = db.transaction('suppliers', 'readwrite');
+    const store = tx.objectStore('suppliers');
+    for (const id of ids) store.delete(id);
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+
+  async deleteAll() {
+    if (this.mode === 'ls') {
+      await this._lsSaveAll([]);
+      return;
+    }
+    const db = this.db;
+    const tx = db.transaction('suppliers', 'readwrite');
+    tx.objectStore('suppliers').clear();
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+
+  async setStatus(id, status) {
+    if (!STATUS_LIST.includes(status)) throw new Error('bad status');
+    id = Number(id);
+    if (!Number.isFinite(id)) throw new Error('bad id');
+
+    if (this.mode === 'ls') {
+      const all = await this._lsLoadAll();
+      const s = all.find(x => Number(x.id) === id);
+      if (!s) return false;
+      s.status = status;
+      await this._lsSaveAll(all);
+      return true;
+    }
+
+    const db = this.db;
+    const tx = db.transaction('suppliers', 'readwrite');
+    const store = tx.objectStore('suppliers');
+    const row = await new Promise((resolve) => {
+      const r = store.get(id);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => resolve(null);
+    });
+    if (!row) return false;
+    row.status = status;
+    await new Promise((resolve, reject) => {
+      const r = store.put(row);
+      r.onsuccess = () => resolve(true);
+      r.onerror = () => reject(r.error);
+    });
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+    return true;
+  }
+
+  async exportJson() {
+    const all = await this.getAll();
+    return {
+      app: 'vadim-filter-tool',
+      version: APP.DB_EXPORT_VERSION,
+      exported_at: new Date().toISOString(),
+      suppliers: all,
+    };
+  }
+
+  async importJson(obj) {
+    if (!obj || obj.app !== 'vadim-filter-tool' || !Array.isArray(obj.suppliers)) {
+      throw new Error('bad format');
+    }
+    // Replace DB with imported. (Simple & predictable)
+    await this.deleteAll();
+    const rows = obj.suppliers.map(x => ({...x}));
+    if (this.mode === 'ls') {
+      await this._lsSaveAll(rows);
+      return;
+    }
+    const db = this.db;
+    const tx = db.transaction('suppliers', 'readwrite');
+    const store = tx.objectStore('suppliers');
+    for (const r of rows) {
+      // If the DB uses autoIncrement, keeping ids is ok with put().
+      store.put(r);
+    }
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+}
+
+const store = new SupplierStore();
+
+/* ===========================
+   Extraction logic (ported from ingest.py)
+=========================== */
+const REASON_RU = {
+  no_supplier_section: "не нашёл таблицу поставщика",
+  no_company_name: "нет названия компании",
+  no_director_fio: "нет ФИО руководителя",
+  no_inn: "нет ИНН",
+  no_address: "нет адреса",
+  no_email: "нет email",
+  no_phone: "нет телефона",
+  no_contact: "нет телефона и email",
+  not_mobile: "телефон не мобильный",
+  bad_zip: "битый ZIP",
+  zip_unsupported: "ZIP не поддерживается браузером",
+  pdf_unsupported: "PDF-импорт недоступен (нет PDF.js)",
+  pdf_no_text: "PDF без текста (скорее всего скан — нужен OCR)",
+  pdf_parse_error: "не удалось прочитать PDF",
+	  ocr_unavailable: "OCR-сервер недоступен (запустите локальный helper)",
+	  ocr_failed: "OCR не удалось выполнить",
+};
+
+const SECTION_SUPPLIER_RE = /(?:\b\d+(?:\.\d+)*\.)?\s*(?:Информация\s+(?:о|об)\s+(?:поставщике|исполнителе)|Сведения\s+об\s+участнике\s+закупки|Данные\s+поставщика|Сведения\s+о\s+поставщике)/i;
+
+const COMPANY_KEYS = [
+  "Полное наименование",
+  "Наименование",
+  "Наименование организации",
+  "Наименование организации (ФИО физического лица)",
+  "Наименование поставщика",
+  "Сокращенное наименование",
+];
+const DIRECTOR_KEYS = [
+  "ФИО руководителя",
+  "Руководитель",
+  "ФИО",
+  "Наименование организации (ФИО физического лица)",
+];
+const EMAIL_KEYS = [
+  "Адрес электронной почты",
+  "Электронная почта",
+  "Email",
+  "E-mail",
+];
+const PHONE_KEYS = [
+  "Номер контактного телефона",
+  "Телефон",
+  "Контактный телефон",
+  "Номер телефона",
+];
+
+const INN_KEYS = [
+  "ИНН",
+  "ИНН (для юридических лиц)",
+  "ИНН (для физических лиц)",
+  "ИНН / КПП",
+  "ИНН/КПП",
+  "ИНН, КПП",
+  "ИНН (для юридических лиц) / КПП (для юридических лиц)",
+  "ИНН (для юридических лиц)/КПП (для юридических лиц)",
+  "ИНН (для юридических лиц) / КПП",
+  "ИНН/КПП (для юридических лиц)",
+];
+
+const ADDRESS_KEYS = [
+  "Адрес места нахождения (адрес места жительства)",
+  "Адрес места нахождения",
+  "Место нахождения",
+  "Адрес",
+  "Почтовый адрес",
+];
+
+function cleanText(s) {
+  return String(s || '').replace(/\s+/g, ' ').trim();
+}
+
+function cleanCompanyName(v) {
+  v = cleanText(v);
+  // remove common IP markers
+  v = v.replace(/Индивидуальный предприниматель/gi, '').trim();
+  v = v.replace(/\(ИП\)/gi, '').trim();
+  v = v.replace(/\s+/g, ' ').trim();
+  return v;
+}
+function pickFirst(kv, keys) {
+  for (const k of keys) {
+    const v = cleanText(kv[k] || '');
+    if (v) return v;
+  }
+  return '';
+}
+function parseDirectorFio(raw) {
+  raw = cleanText(raw);
+  raw = raw.replace(/Индивидуальный предприниматель/gi, '').trim();
+  raw = raw.replace(/\\(ИП\\)/gi, '').trim();
+  const parts = raw.split(/\s+/).filter(Boolean);
+  return parts.slice(0,3).join(' ').trim();
+}
+function chooseCompanyName(kv, directorFio) {
+  for (const k of COMPANY_KEYS) {
+    if (kv[k]) {
+      const v = cleanCompanyName(kv[k]);
+      if (k === "Наименование организации (ФИО физического лица)") {
+        const kind = cleanText(kv["Вид"] || "");
+        if (kind.includes("Физическое лицо") && directorFio) return `ИП ${directorFio}`;
+      }
+      return v;
+    }
+  }
+  const kind = cleanText(kv["Вид"] || "");
+  const fioRaw = cleanText(kv["ФИО"] || "");
+  if (fioRaw.includes("Индивидуальный предприниматель") || kind.includes("Физическое лицо")) {
+    if (directorFio) return `ИП ${directorFio}`;
+  }
+  if (directorFio) return directorFio;
+  return "";
+}
+
+function fallbackCompanyNameFromFilename(sourceFile){
+  try{
+    if(!sourceFile) return "";
+    let name = String(sourceFile);
+    name = name.replace(/\\/g,'/').split('/').pop();
+    name = name.replace(/\.[a-z0-9]+$/i,'');
+    name = name.replace(/\s+/g,' ').trim();
+    if(!name) return "";
+    const low = name.toLowerCase();
+    const badStarts = [
+      'печатная форма электронного контракта',
+      'печатная форма',
+      'электронного контракта',
+      'контракт',
+      'договор',
+      'форма',
+      'приложение',
+      'акт',
+      'scan',
+      'скан',
+      'document',
+      'doc'
+    ];
+    if (badStarts.some(b => low.startsWith(b))) return "";
+    if (/^\(?\d+\)?$/.test(name)) return "";
+    if (name.length < 3) return "";
+    if (!/[A-Za-zА-Яа-яЁё]/.test(name)) return "";
+    return name;
+  }catch(e){
+    return "";
+  }
+}
+
+function normalizePhoneRu(phoneRaw) {
+  if (!phoneRaw) return "";
+  const s = String(phoneRaw);
+
+  // Collect RU phone candidates from the string.
+  const cand = [];
+  const rxPretty = /(?:\+7|7|8)\s*\(?\d{3}\)?[\s\-]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/g;
+  const rxPlain  = /(?:7|8)\d{10}/g;
+
+  for (const m of s.matchAll(rxPretty)) cand.push(m[0]);
+  if (!cand.length) for (const m of s.replace(/\D/g,'').matchAll(rxPlain)) cand.push(m[0]);
+
+  if (!cand.length) return "";
+
+  const norm = (x) => {
+    let d = String(x||'').replace(/\D/g,'');
+    if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
+    if (d.length === 11 && d[0] === '7') return '+' + d;
+    // 10 digits without trunk -> accept ONLY mobile (starts with 9)
+    if (d.length === 10 && d[0] === '9') return '+7' + d;
+    return '';
+  };
+
+  const normalized = cand.map(norm).filter(Boolean);
+  if (!normalized.length) return "";
+
+  // Prefer mobile if present.
+  const mobile = normalized.find(p => isMobileRu(p));
+  return mobile || normalized[0];
+}
+
+
+
+  function normalizeEmail(raw){
+    if (!raw) return '';
+    const t = String(raw).trim();
+    const m = t.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    return m ? m[0].toLowerCase() : '';
+  }
+
+  function normalizeInnRu(raw){
+    if (!raw) return '';
+    const t = String(raw);
+
+    // Prefer explicit 10/12-digit sequences (ИНН юрлица=10, ИНН физлица/ИП=12)
+    const hits = [];
+    const re = /\d{10}|\d{12}/g;
+    let m;
+    while ((m = re.exec(t)) !== null) hits.push({ idx: m.index, val: m[0] });
+
+    if (hits.length) {
+      hits.sort((a,b) => a.idx - b.idx);
+      const digitsAll = (t.match(/\d+/g) || []).join('');
+      // Common case: "ИНН/КПП" => 10+9=19 digits, take the first 10-digit block
+      if (digitsAll.length === 19) {
+        const first10 = hits.find(x => x.val.length === 10);
+        if (first10) return first10.val;
+      }
+      return hits[0].val;
+    }
+
+    // Fallback: take leading part by typical lengths
+    const digits = (t.match(/\d+/g) || []).join('');
+    if (!digits) return '';
+    if (digits.length === 19) return digits.slice(0,10); // INN10 + KPP9
+    if (digits.length === 21) return digits.slice(0,12); // INN12 + KPP9
+    if (digits.length >= 12) return digits.slice(0,12);
+    if (digits.length >= 10) return digits.slice(0,10);
+    return digits;
+  }
+
+function extractPurchaseObjectName(doc) {
+  try {
+    const root = doc && (doc.body || doc);
+    if (!root) return '';
+
+    const targetRe = /наименование\s+объекта\s+закупки/i;
+    const tables = Array.from(root.querySelectorAll('table'));
+
+    for (const t of tables) {
+      const rows = Array.from(t.querySelectorAll('tr'));
+      if (!rows.length) continue;
+
+      const headCells = Array.from(rows[0].querySelectorAll('th,td'));
+      const headTexts = headCells.map(c => cleanText(c.textContent || ''));
+      const col = headTexts.findIndex(x => targetRe.test(x));
+      if (col < 0) continue;
+
+      const vals = [];
+      for (let i = 1; i < rows.length; i++) {
+        const cells = Array.from(rows[i].querySelectorAll('td,th'));
+        if (!cells.length) continue;
+        const cell = cells[col] || cells[cells.length - 1];
+        const v = cleanText(cell.textContent || '');
+        if (v) vals.push(v);
+      }
+      const uniq = Array.from(new Set(vals)).filter(Boolean);
+      if (uniq.length) return uniq.join('; ');
+    }
+  } catch(e) {}
+  return '';
+}
+
+function extractTelegramUsernameFromText(text) {
+  try {
+    const t = String(text || '');
+    const m = t.match(/(?:https?:\/\/)?(?:www\.)?t\.me\/([A-Za-z0-9_]{5,32})/i);
+    if (m && m[1]) return m[1];
+  } catch(e) {}
+  return '';
+}
+
+
+function isMobileRu(phoneAny) {
+  const d = String(phoneAny || '').replace(/\D/g,'');
+  if (!d) return false;
+  // +7XXXXXXXXXX or 7XXXXXXXXXX or 8XXXXXXXXXX
+  if (d.length === 11) {
+    if (d[0] === '7' || d[0] === '8') return d[1] === '9';
+  }
+  // 10 digits without trunk -> assume RU mobile if starts with 9
+  if (d.length === 10) return d[0] === '9';
+  return false;
+}
+
+function findSectionTable(doc) {
+  // Approach A: explicit section title -> first table after it
+  const anchors = Array.from(doc.querySelectorAll("p.sub-block_title, p.sub-block-title, .sub-block_title, .sub-block-title"));
+  for (const p of anchors) {
+    const t = cleanText(p.textContent || "");
+    if (SECTION_SUPPLIER_RE.test(t)) {
+      const tbl = findNextTableNode(doc, p);
+      if (tbl) return tbl;
+    }
+  }
+
+  // Approach B: text scan -> next table
+  const anchor = findAnchorByText(doc, SECTION_SUPPLIER_RE);
+  if (anchor) {
+    const tbl = findNextTableNode(doc, anchor);
+    if (tbl) return tbl;
+  }
+
+  // Approach C: score all tables and pick the best match by keys
+  const tables = Array.from(doc.querySelectorAll("table"));
+  let best = null;
+  let bestScore = -1;
+
+  function scoreKv(kv) {
+    const keys = Object.keys(kv);
+    const hasAny = (arr) => arr.some(k => keys.includes(k));
+    let s = 0;
+    // Prefer supplier table fields when fallback scoring is used
+    if (keys.includes('Телефон')) s += 2;
+    if (keys.includes('Номер контактного телефона')) s -= 1;
+
+    if (hasAny(COMPANY_KEYS)) s += 4;
+    if (hasAny(INN_KEYS)) s += 4;
+    if (hasAny(ADDRESS_KEYS)) s += 3;
+    if (hasAny(PHONE_KEYS)) s += 2;
+    if (hasAny(EMAIL_KEYS)) s += 2;
+    if (hasAny(DIRECTOR_KEYS)) s += 1;
+    const blob = (keys.join(" ") + " " + Object.values(kv).join(" "));
+    if (/ИНН/i.test(blob)) s += 1;
+    if (/поставщик|исполнитель/i.test(blob)) s += 1;
+    return s;
+  }
+
+  for (const tbl of tables) {
+    const trCount = tbl.querySelectorAll("tr").length;
+    if (trCount < 4) continue;
+    const kv = tableToKv(tbl);
+     let s = scoreKv(kv);
+     // Extra preference: table that contains a valid (and especially mobile) phone
+     const phoneE164 = normalizePhoneRu(pickFirst(kv, PHONE_KEYS));
+     if (phoneE164) s += 1;
+     if (isMobileRu(phoneE164)) s += 4;
+    if (s > bestScore) { bestScore = s; best = tbl; }
+  }
+
+  if (best && bestScore >= 5) return best;
+  return null;
+}
+
+function findNextTableNode(doc, anchor) {
+  if (!anchor) return null;
+  const walker = doc.createTreeWalker(doc.body || doc.documentElement || doc, NodeFilter.SHOW_ELEMENT, null);
+  let foundAnchor = false;
+  while (walker.nextNode()) {
+    const n = walker.currentNode;
+    if (n === anchor) { foundAnchor = true; continue; }
+    if (!foundAnchor) continue;
+    if (n.tagName && n.tagName.toLowerCase() === 'table') return n;
+  }
+  return null;
+}
+
+function findAnchorByText(doc, reText) {
+  const root = doc.body || doc;
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null);
+  while (walker.nextNode()) {
+    const el = walker.currentNode;
+    if (!el || !el.tagName) continue;
+    // Only consider "header-like" tags to reduce false positives
+    const tn = el.tagName.toLowerCase();
+    if (!['p','div','span','b','strong','h1','h2','h3','h4','h5','h6','td'].includes(tn)) continue;
+    const t = el.textContent || '';
+    if (reText.test(t)) return el;
+  }
+  return null;
+}
+
+function tableToKv(tableEl) {
+  const kv = {};
+  const rows = Array.from(tableEl.querySelectorAll("tr"));
+  for (const tr of rows) {
+    const cells = tr.querySelectorAll("td,th");
+    if (!cells || cells.length < 2) continue;
+    let k = cleanText(cells[0].textContent || "");
+    let v = cleanText(cells[1].textContent || "");
+
+    k = k.replace(/[：:]\s*$/u, "").replace(/\s+/g, " ").trim();
+    v = v.replace(/\s+/g, " ").trim();
+
+    if (!k) continue;
+    if (!(k in kv) && v) kv[k] = v;
+  }
+  return kv;
+}
+
+function mergeKvFromTables(tables){
+  const kv = {};
+  for (const tbl of (tables || [])) {
+    const part = tableToKv(tbl);
+    for (const k of Object.keys(part)) {
+      const v = part[k];
+      if (!(k in kv) && v) kv[k] = v;
+    }
+  }
+  return kv;
+}
+
+function looksLikeLegalEntityName(s){
+  s = cleanText(s || "");
+  if (!s) return false;
+  return /\b(ООО|ОБЩЕСТВО|АО|ПАО|ЗАО|ОАО|НКО|ФОНД|УЧРЕЖДЕНИЕ|ПРЕДПРИЯТИЕ|КОМПАНИЯ|ТОВАРИЩЕСТВО|ГУП|МУП)\b/i.test(s);
+}
+
+function parseFio3(raw){
+  raw = cleanText(raw || "");
+  raw = raw.replace(/Индивидуальный предприниматель/gi, "").trim();
+  raw = raw.replace(/\(ИП\)/gi, "").trim();
+  raw = raw.replace(/^\s*ИП\s+/i, "").trim();
+  raw = raw.replace(/[«»"]/g, " ").replace(/\s+/g, " ").trim();
+
+  const parts = raw.split(/\s+/).filter(Boolean);
+  const fio = parts.slice(0, 3).join(" ").trim();
+  if (looksLikeLegalEntityName(fio)) return "";
+  return fio;
+}
+
+function detectSupplierKind(kv, sourceFile){
+  const kind = cleanText((kv && kv["Вид"]) || "");
+  const fioPhys = cleanText((kv && kv["ФИО физического лица"]) || "");
+  const nameOrgOrFio = cleanText((kv && kv["Наименование организации (ФИО физического лица)"]) || "");
+
+  const physicalByKind = /Физическое лицо/i.test(kind);
+  const physical = physicalByKind || !!fioPhys;
+
+  let ip = "";
+  if (physical) ip = "ИП";
+  if (/^\s*ИП\b/i.test(fioPhys) || /^\s*ИП\b/i.test(nameOrgOrFio)) ip = "ИП";
+  if (sourceFile && /^\s*ИП\b/i.test(String(sourceFile))) ip = "ИП";
+
+  return { kind, physical, ip };
+}
+
+function extractDirectorFromKv(kv){
+  if (!kv) return "";
+  const keys = Object.keys(kv);
+  for (const k of keys) {
+    if (/^\s*ФИО\s+руководителя/i.test(k) || /^\s*Руководитель\b/i.test(k) || /руководитель/i.test(k)) {
+      const fio = parseFio3(kv[k]);
+      if (fio) return fio;
+    }
+  }
+  if (kv["ФИО руководителя"]) return parseFio3(kv["ФИО руководителя"]);
+  return "";
+}
+
+function findSupplierTables(doc){
+  const anchors = Array.from(doc.querySelectorAll("p.sub-block_title, p.sub-block-title, .sub-block_title, .sub-block-title"));
+  let anchor = null;
+  for (const p of anchors) {
+    const t = cleanText(p.textContent || "");
+    if (SECTION_SUPPLIER_RE.test(t)) { anchor = p; break; }
+  }
+  if (!anchor) anchor = findAnchorByText(doc, SECTION_SUPPLIER_RE);
+
+  const out = [];
+  if (anchor) {
+    const walker = doc.createTreeWalker(doc.body || doc.documentElement || doc, NodeFilter.SHOW_ELEMENT, null);
+    let foundAnchor = false;
+    while (walker.nextNode()) {
+      const n = walker.currentNode;
+      if (n === anchor) { foundAnchor = true; continue; }
+      if (!foundAnchor) continue;
+
+      if (out.length >= 1 && n.matches && n.matches("p.sub-block_title, p.sub-block-title, .sub-block_title, .sub-block-title")) {
+        const tt = cleanText(n.textContent || "");
+        if (tt && !SECTION_SUPPLIER_RE.test(tt)) break;
+      }
+
+      if (n.tagName && n.tagName.toLowerCase() === "table") {
+        out.push(n);
+        if (out.length >= 3) break;
+      }
+    }
+  }
+  if (out.length) return out;
+
+  const best = findSectionTable(doc);
+  if (!best) return [];
+  out.push(best);
+  const next = findNextTableNode(doc, best);
+  if (next) out.push(next);
+  return out;
+}
+
+function tryParseSupplierFromHtmlText(htmlText, sourceFile, opts) {
+  const { requireMobile=true, requireEmail=false, requireInn=true, requirePhone=true } = opts || {};
+  const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+  const purchaseObjectName = extractPurchaseObjectName(doc);
+  const telegramUsername = extractTelegramUsernameFromText(htmlText);
+
+  const tables = findSupplierTables(doc);
+  if (!tables || !tables.length) return {supplier:null, reason:'no_supplier_section'};
+  const kv = mergeKvFromTables(tables);
+
+  const { physical, ip } = detectSupplierKind(kv, sourceFile);
+
+  // Company / Supplier FIO
+  let companyName = "";
+  let supplierFio = "";
+
+  if (physical) {
+    const fioRaw = cleanText(kv["ФИО физического лица"] || kv["Наименование организации (ФИО физического лица)"] || kv["ФИО"] || "");
+    supplierFio = parseFio3(fioRaw);
+    if (!supplierFio && sourceFile && /^\s*ИП\s+/i.test(String(sourceFile))) {
+      supplierFio = parseFio3(String(sourceFile).replace(/^\s*ИП\s+/i, ""));
+    }
+    if (!supplierFio) return {supplier:null, reason:'no_supplier_fio'};
+  } else {
+    const companyRaw = pickFirst(kv, COMPANY_KEYS);
+    companyName = companyRaw ? cleanCompanyName(companyRaw) : "";
+    if (!companyName) companyName = fallbackCompanyNameFromFilename(sourceFile);
+    if (!companyName) return {supplier:null, reason:'no_company_name'};
+  }
+
+  // Director FIO
+  let directorFio = "";
+  if (!physical) {
+    directorFio = extractDirectorFromKv(kv);
+    if (!directorFio || looksLikeLegalEntityName(directorFio)) directorFio = "ФИО";
+  }
+
+  const innRaw = pickFirst(kv, INN_KEYS);
+  const inn = normalizeInnRu(innRaw);
+  if (!inn && requireInn) return {supplier:null, reason:'no_inn'};
+
+  const phoneRaw = pickFirst(kv, PHONE_KEYS);
+  const phoneE164 = normalizePhoneRu(phoneRaw);
+
+  const emailRaw = pickFirst(kv, EMAIL_KEYS);
+  const email = normalizeEmail(emailRaw);
+
+  const addressRaw = pickFirst(kv, ADDRESS_KEYS);
+  const address = addressRaw ? cleanText(addressRaw) : '';
+
+  // BUSINESS RULE: phone is обязательный (можно отключить)
+  if (!phoneE164 && requirePhone) return {supplier:null, reason:'no_phone'};
+  if (requireEmail && !email) return {supplier:null, reason:'no_email'};
+  if (phoneE164 && requireMobile && !isMobileRu(phoneE164)) return {supplier:null, reason:'not_mobile'};
+
+  return {
+    supplier: {
+      company_name: companyName,
+      ip: (physical ? (ip || "ИП") : ""),
+      supplier_fio: supplierFio,
+      director_fio: directorFio,
+      phone_e164: phoneE164 || '',
+      email,
+      inn: inn || '',
+      address,
+      purchase_object_name: purchaseObjectName || '',
+      telegram_username: telegramUsername || '',
+      source_file: sourceFile || '',
+    },
+    reason: 'ok',
+  };
+}
+
+// Decode bytes with best-effort// Decode bytes with best-effort: utf-8 then windows-1251 if needed
+function decodeHtmlBytes(bytes) {
+  // Try UTF-8 first, but fall back to Windows-1251 when UTF-8 decode produces mojibake.
+  const decUtf8 = new TextDecoder('utf-8', { fatal: false });
+  const dec1251 = new TextDecoder('windows-1251', { fatal: false });
+
+  const tUtf8 = decUtf8.decode(bytes);
+  const t1251 = dec1251.decode(bytes);
+
+  function score(t) {
+    const len = Math.max(1, t.length);
+    const cyr = (t.match(/[А-Яа-яЁё]/g) || []).length;
+    const repl = (t.match(/\uFFFD/g) || []).length; // '�'
+    const hasSupplier = SECTION_SUPPLIER_RE.test(t);
+    const hasLabels = /(Телефон|ИНН|КПП|Адрес|Электронн)/i.test(t);
+    let s = (cyr / len) * 1000;
+    s += hasSupplier ? 400 : 0;
+    s += hasLabels ? 200 : 0;
+    s -= repl * 5;
+    if (cyr === 0) s -= 500;
+    return s;
+  }
+
+  const sUtf8 = score(tUtf8);
+  const s1251 = score(t1251);
+
+  return (s1251 > sUtf8) ? t1251 : tUtf8;
+}
+
+async function readFileAsBytes(file) {
+  // Modern browsers
+  if (file && typeof file.arrayBuffer === 'function') {
+    const ab = await file.arrayBuffer();
+    return new Uint8Array(ab);
+  }
+  // Legacy fallback (old Edge / embedded webviews)
+  return await new Promise((resolve, reject) => {
+    try {
+      const fr = new FileReader();
+      fr.onload = () => resolve(new Uint8Array(fr.result));
+      fr.onerror = () => reject(fr.error || new Error('FileReader failed'));
+      fr.readAsArrayBuffer(file);
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+/* ===========================
+   PDF (experimental)
+   - Works only for PDF with text layer.
+   - For scanned PDFs (images) you need OCR helper (server/app).
+=========================== */
+const PDFJS_CDN_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+
+function setupPdfJsIfAny(){
+  try {
+    if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN_BASE + 'pdf.worker.min.js';
+    }
+  } catch(e) {}
+}
+setupPdfJsIfAny();
+
+async function extractTextFromPdfBytes(bytes){
+  if (!window.pdfjsLib) throw new Error('pdfjs_missing');
+  const task = window.pdfjsLib.getDocument({ data: bytes });
+  const pdf = await task.promise;
+  let out = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const items = (tc && tc.items) ? tc.items : [];
+    const strs = items.map(it => (it && it.str) ? String(it.str) : '').filter(Boolean);
+    out += strs.join(' ') + '\n';
+  }
+  return out;
+}
+
+	const OCR_HELPER_DEFAULTS = ['http://127.0.0.1:17871','http://localhost:17871'];
+	function ocrHelperBase(){
+	  try {
+	    const v = (localStorage.getItem('OCR_HELPER_BASE') || '').trim();
+	    return v ? v.replace(/\/+$/,'') : OCR_HELPER_DEFAULTS[0];
+	  } catch(e) {
+	    return OCR_HELPER_DEFAULTS[0];
+	  }
+	}
+
+	async function fetchJsonWithTimeout(url, ms){
+	  const ctrl = new AbortController();
+	  const t = setTimeout(() => ctrl.abort(), ms || 2500);
+	  try {
+	    const r = await fetch(url, { signal: ctrl.signal });
+	    const j = await r.json();
+	    return { ok: r.ok, status: r.status, json: j };
+	  } finally {
+	    clearTimeout(t);
+	  }
+	}
+
+	let _ocrHealthCache = { ts: 0, ok: false, json: null };
+	async function checkOcrHelper(){
+	  const now = Date.now();
+	  if (_ocrHealthCache.ts && (now - _ocrHealthCache.ts) < 4000) return _ocrHealthCache;
+	  const base = ocrHelperBase();
+	  try {
+	    const res = await fetchJsonWithTimeout(base + '/health', 2000);
+	    _ocrHealthCache = { ts: now, ok: !!(res && res.ok && res.json && res.json.ok), json: (res && res.json) || null };
+	    return _ocrHealthCache;
+	  } catch (e) {
+	    // If no custom base and default failed, try localhost fallback
+	    try {
+	      const stored = (localStorage.getItem('OCR_HELPER_BASE') || '').trim();
+	      if (!stored && base === OCR_HELPER_DEFAULTS[0]) {
+	        const res2 = await fetchJsonWithTimeout(OCR_HELPER_DEFAULTS[1] + '/health', 2000);
+	        if (res2 && res2.ok && res2.json && res2.json.ok) {
+	          localStorage.setItem('OCR_HELPER_BASE', OCR_HELPER_DEFAULTS[1]);
+	          _ocrHealthCache = { ts: now, ok: true, json: res2.json };
+	          return _ocrHealthCache;
+	        }
+	      }
+	    } catch (_) {}
+	    _ocrHealthCache = { ts: now, ok: false, json: null };
+	    return _ocrHealthCache;
+	  }
+	}
+
+async function ocrPdfViaLocalHelper(bytes, fileName, fileObj, pagesStr, scale){
+  let base = ocrHelperBase();
+  let url = base + '/ocr';
+  const fd = new FormData();
+  const size = bytes && bytes.byteLength !== undefined ? bytes.byteLength : (bytes && bytes.length ? bytes.length : 0);
+  if (size > 0) {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    fd.append('file', blob, fileName || 'file.pdf');
+  } else if (fileObj) {
+    // Fallback: send the original File object if bytes are empty
+    fd.append('file', fileObj, fileName || fileObj.name || 'file.pdf');
+  } else {
+    const blob = new Blob([bytes || new Uint8Array()], { type: 'application/pdf' });
+    fd.append('file', blob, fileName || 'file.pdf');
+  }
+  if (pagesStr) fd.append('pages', String(pagesStr));
+  if (scale) fd.append('scale', String(scale));
+  let r;
+  window.__ocrBusy = true;
+  try {
+    r = await fetch(url, { method: 'POST', body: fd });
+  } catch (e) {
+    // If no custom base and default failed, try localhost fallback
+    try {
+      const stored = (localStorage.getItem('OCR_HELPER_BASE') || '').trim();
+      if (!stored && base === OCR_HELPER_DEFAULTS[0]) {
+        base = OCR_HELPER_DEFAULTS[1];
+        url = base + '/ocr';
+        r = await fetch(url, { method: 'POST', body: fd });
+      } else {
+        throw e;
+      }
+    } catch (_) {
+      // helper is not running / blocked
+      throw new Error('ocr_unavailable');
+    }
+  }
+  finally { window.__ocrBusy = false; }
+
+  // Try to parse response payload even on errors (we return JSON with stack)
+  let payloadText = '';
+  try { payloadText = await r.text(); } catch(e) {}
+  let payloadJson = null;
+  try { payloadJson = payloadText ? JSON.parse(payloadText) : null; } catch(e) {}
+
+  if (!r.ok) {
+    let errMsg = '';
+if (payloadJson) {
+  errMsg = (payloadJson.error !== undefined) ? payloadJson.error
+        : ((payloadJson.message !== undefined) ? payloadJson.message : payloadJson);
+  if (typeof errMsg === 'object') {
+    try { errMsg = JSON.stringify(errMsg); } catch(e) { errMsg = String(errMsg); }
+  } else {
+    errMsg = String(errMsg);
+  }
+} else {
+  errMsg = (payloadText ? payloadText.slice(0, 200) : '');
+}
+    const hint = errMsg ? (': ' + errMsg) : '';
+    console.error('[OCR helper] HTTP', r.status, errMsg);
+    throw new Error('ocr_failed_http_' + r.status + hint);
+  }
+
+  const j = payloadJson || (payloadText ? JSON.parse(payloadText) : null);
+  const textOut = (j && j.text) ? String(j.text) : '';
+  return textOut;
+}
+
+
+function pickCompanyNameFromText(text){
+  const lines = String(text||'').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const rx1 = /\b(ООО|АО|ПАО|ИП)\b[^\n]{0,120}/i;
+  for (const ln of lines) {
+    const m = ln.match(rx1);
+    if (m) return m[0].trim();
+  }
+  // long uppercase line
+  for (const ln of lines) {
+    if (ln.length >= 8 && ln.length <= 140 && ln === ln.toUpperCase() && /[А-ЯЁ]/.test(ln)) return ln;
+  }
+  // fallback: first non-empty line
+  return lines[0] || '';
+}
+
+function pickDirectorFromText(text){
+  const t = String(text||'');
+  // "в лице Иванова Ивана Ивановича"
+  let m = t.match(/в\s+лице\s+([А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+)/);
+  if (m) return m[1].trim();
+  // "генерального директора Иванова И.И."
+  m = t.match(/директор\w*\s+([А-ЯЁ][а-яё]+\s+[А-ЯЁ][a-яё\.]+\s*[А-ЯЁ][a-яё\.]*)/i);
+  if (m) return m[1].replace(/\s+/g,' ').trim();
+  return '';
+}
+
+function pickAddressFromText(text){
+  const t = String(text||'');
+  let m = t.match(/адрес\s*[:\-]?\s*([^\n]{10,160})/i);
+  if (m) return m[1].trim();
+  m = t.match(/место\s+нахожд\w*\s*[:\-]?\s*([^\n]{10,160})/i);
+  if (m) return m[1].trim();
+  return '';
+}
+
+function pickPurchaseObjectFromText(text){
+  const t = String(text||'');
+  let m = t.match(/Наименование\s+объекта\s+закупки\s*[:\-]?\s*([^\n]{3,160})/i);
+  if (m) return m[1].trim();
+  m = t.match(/Предмет\s+контракта\s*[:\-]?\s*([^\n]{3,160})/i);
+  if (m) return m[1].trim();
+  return '';
+}
+
+function tryParseSupplierFromPlainText(text, fileName, opts){
+  const requireMobile = !!(opts && opts.requireMobile);
+  const requireEmail  = !!(opts && opts.requireEmail);
+  const requireInn    = !!(opts && opts.requireInn);
+  const requirePhone  = !!(opts && opts.requirePhone);
+
+  const phoneRawMatch = String(text||'').match(/(?:\+7|7|8)\s*\(?\d{3}\)?[\s\-]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/);
+  const phone_e164 = normalizePhoneRu(phoneRawMatch ? phoneRawMatch[0] : '');
+  if (!phone_e164 && requirePhone) return { supplier: null, reason: 'no_phone' };
+  if (requireMobile && !isMobileRu(phone_e164)) return { supplier: null, reason: 'not_mobile' };
+
+  const email = normalizeEmail(String(text||''));
+  if (requireEmail && !email) return { supplier: null, reason: 'no_email' };
+
+  // INN: prefer "ИНН 123..." patterns
+  let inn = '';
+  let m = String(text||'').match(/ИНН\s*[:\-]?\s*(\d{10,12})/i);
+  if (m) inn = normalizeInnRu(m[1]);
+  if (!inn) {
+    const mm = String(text||'').match(/\b\d{10}\b|\b\d{12}\b/);
+    if (mm) inn = normalizeInnRu(mm[0]);
+  }
+  if (!inn && requireInn) return { supplier: null, reason: 'no_inn' };
+
+  const t = String(text||'');
+  const looksIP = /^\s*ИП\b/i.test(t) || /Индивидуальный предприниматель/i.test(t) || (fileName && /^\s*ИП\b/i.test(String(fileName)));
+
+  let company_name = '';
+  let supplier_fio = '';
+  let ip = '';
+
+  if (looksIP) {
+    ip = 'ИП';
+    let fioRaw = '';
+    let mm = t.match(/(?:^|\n)\s*ИП\s+([А-ЯЁ][а-яё\-]+(?:\s+[А-ЯЁ][а-яё\-]+){1,2})/);
+    if (mm) fioRaw = mm[1];
+    if (!fioRaw && fileName && /^\s*ИП\s+/i.test(String(fileName))) fioRaw = String(fileName).replace(/^\s*ИП\s+/i,'');
+    supplier_fio = parseFio3(fioRaw || '');
+    if (!supplier_fio) return { supplier: null, reason: 'no_supplier_fio' };
+  } else {
+    company_name = pickCompanyNameFromText(t);
+    if (!company_name) return { supplier: null, reason: 'no_company_name' };
+  }
+
+  let director_fio = '';
+  if (!looksIP) {
+    director_fio = pickDirectorFromText(t);
+    if (!director_fio || looksLikeLegalEntityName(director_fio)) director_fio = 'ФИО';
+  }
+
+  const address = pickAddressFromText(t);
+  const purchase_object_name = pickPurchaseObjectFromText(t);
+
+  const supplier = {
+    company_name,
+    ip,
+    supplier_fio,
+    director_fio,
+    phone_e164: phone_e164 || '',
+    email,
+    inn: inn || '',
+    address,
+    purchase_object_name,
+    source_file: fileName || '',
+    status: 'new',
+    extracted_at: new Date().toISOString(),
+    notes: ''
+  };
+  return { supplier, reason: 'ok' };
+}
+
+
+
+/* ===========================
+   ZIP reader (no external libs)
+   - supports "store" (0) and "deflate" (8)
+   - uses DecompressionStream if available
+=========================== */
+function u16(dv, off){ return dv.getUint16(off, true); }
+function u32(dv, off){ return dv.getUint32(off, true); }
+
+async function inflateMaybe(u8, method) {
+  if (method === 0) return u8;
+  if (method !== 8) throw new Error('unsupported compression method ' + method);
+
+  if (!('DecompressionStream' in window)) throw new Error('zip_unsupported');
+  // Zip uses raw deflate typically.
+  const tryAlgo = async (format) => {
+    const ds = new DecompressionStream(format);
+    const stream = new Blob([u8]).stream().pipeThrough(ds);
+    const ab = await new Response(stream).arrayBuffer();
+    return new Uint8Array(ab);
+  };
+  try {
+    return await tryAlgo('deflate-raw');
+  } catch(e) {
+    // Some browsers may not have deflate-raw; try deflate.
+    return await tryAlgo('deflate');
+  }
+}
+
+async function unzipHtmlEntries(zipBytes) {
+  const dv = new DataView(zipBytes.buffer, zipBytes.byteOffset, zipBytes.byteLength);
+  // Find EOCD (0x06054b50) scanning backwards up to 66k.
+  const sigEOCD = 0x06054b50;
+  let eocdOff = -1;
+  const maxBack = Math.min(zipBytes.byteLength - 22, 66000);
+  for (let i = 0; i <= maxBack; i++) {
+    const off = zipBytes.byteLength - 22 - i;
+    if (off < 0) break;
+    if (u32(dv, off) === sigEOCD) { eocdOff = off; break; }
+  }
+  if (eocdOff < 0) throw new Error('bad_zip');
+
+  const cdSize = u32(dv, eocdOff + 12);
+  const cdOff  = u32(dv, eocdOff + 16);
+
+  const sigCEN = 0x02014b50;
+  const sigLOC = 0x04034b50;
+
+  let ptr = cdOff;
+  const entries = [];
+  while (ptr < cdOff + cdSize) {
+    if (u32(dv, ptr) !== sigCEN) break;
+    const method = u16(dv, ptr + 10);
+    const compSize = u32(dv, ptr + 20);
+    const nameLen = u16(dv, ptr + 28);
+    const extraLen = u16(dv, ptr + 30);
+    const commentLen = u16(dv, ptr + 32);
+    const lho = u32(dv, ptr + 42);
+    const nameBytes = zipBytes.slice(ptr + 46, ptr + 46 + nameLen);
+    const name = new TextDecoder('utf-8', {fatal:false}).decode(nameBytes);
+    ptr = ptr + 46 + nameLen + extraLen + commentLen;
+
+    if (!name || name.endsWith('/')) continue;
+    const lower = name.toLowerCase();
+    if (lower.startsWith('__macosx/')) continue;
+    const base = name.split('/').pop();
+    if (base && base.startsWith('._')) continue;
+    if (!(lower.endsWith('.html') || lower.endsWith('.htm') || lower.endsWith('.zip'))) continue;
+    entries.push({ name, method, compSize, lho });
+  }
+
+  const out = [];
+  for (const e of entries) {
+    const lho = e.lho;
+    if (u32(dv, lho) !== sigLOC) continue;
+    const nameLen = u16(dv, lho + 26);
+    const extraLen = u16(dv, lho + 28);
+    const dataOff = lho + 30 + nameLen + extraLen;
+    const comp = zipBytes.slice(dataOff, dataOff + e.compSize);
+    let data = await inflateMaybe(comp, e.method);
+    out.push({ filename: e.name.split('/').pop(), bytes: data });
+  }
+  return out;
+}
+
+/* ===========================
+   Selection / Filters persistence
+=========================== */
+function loadSelectedSet() {
+  try {
+    const raw = localStorage.getItem(APP.SEL_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) || [];
+    return new Set(arr.map(Number).filter(Number.isFinite));
+  } catch(e) {
+    return new Set();
+  }
+}
+function saveSelectedSet(set) {
+  localStorage.setItem(APP.SEL_KEY, JSON.stringify(Array.from(set)));
+  updateSelectedUI(set);
+}
+function updateSelectedUI(set) {
+  document.getElementById('selectedCount').textContent = String(set.size);
+  document.querySelectorAll('.card-select').forEach(cb => {
+    const id = Number(cb.dataset.id);
+    cb.checked = set.has(id);
+  });
+}
+let selected = loadSelectedSet();
+
+function loadFilters() {
+  try { return JSON.parse(localStorage.getItem(APP.FILTER_KEY) || '{}') || {}; }
+  catch(e) { return {}; }
+}
+function saveFilters(st) {
+  localStorage.setItem(APP.FILTER_KEY, JSON.stringify(st || {}));
+}
+
+/* ===========================
+   CSV / Excel (xls) download helpers
+=========================== */
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }, 0);
+}
+
+function toCsv(rows, headers) {
+  const escape = (v) => {
+    const s = String(v ?? '');
+    if (/[",\n\r;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+
+  // Protect Excel from auto-converting long numbers (ИНН/телефон) to scientific notation.
+  const textCols = new Set(['inn','phone_e164','ИНН','Телефон']);
+  const fmt = (h, v) => {
+    const s = String(v ?? '');
+    if (!s) return '';
+    if (textCols.has(h)) return "'" + s; // Excel-friendly text marker
+    return s;
+  };
+
+  const lines = [];
+  lines.push(headers.map(h => escape(h)).join(';'));
+  for (const r of rows) {
+    lines.push(headers.map(h => escape(fmt(h, r[h]))).join(';'));
+  }
+  // Excel loves BOM for UTF-8
+  return '\ufeff' + lines.join('\r\n');
+}
+
+function downloadCsv(rows, filename) {
+  if (!rows.length) {
+    flash('Нет данных для экспорта.', 'error');
+    return;
+  }
+  const headers = Object.keys(rows[0]);
+  const csv = toCsv(rows, headers);
+  downloadBlob(new Blob([csv], {type:'text/csv;charset=utf-8'}), filename);
+}
+
+// Simple Excel (.xls) as HTML table
+function downloadXls(rows, filename, title='Sheet1') {
+  if (!rows.length) {
+    flash('Нет данных для экспорта.', 'error');
+    return;
+  }
+  const headers = Object.keys(rows[0]);
+  const esc = (s) => String(s ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+
+  const textCols = new Set(['inn','phone_e164','ИНН','Телефон']);
+  const td = (h, v) => {
+    const val = esc(v);
+    if (textCols.has(h)) return `<td style="mso-number-format:'\\@';">${val}</td>`;
+    return `<td>${val}</td>`;
+  };
+
+  const head = headers.map(h => `<th>${esc(h)}</th>`).join('');
+  const body = rows.map(r => `<tr>${headers.map(h => td(h, r[h])).join('')}</tr>`).join('');
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8">
+<title>${esc(title)}</title></head>
+<body>
+<table border="1"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+</body></html>`;
+  downloadBlob(new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}), filename);
+}
+
+/* ===========================
+   Message templating
+=========================== */
+function normalizeTemplateText(t) {
+  return String(t || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n');
+}
+
+function getTemplate() {
+  let t = normalizeTemplateText(localStorage.getItem(APP.TEMPLATE_KEY) || '');
+  t = t.trim();
+  return t || DEFAULT_TEMPLATE;
+}
+function renderTemplate(tpl, s) {
+  let out = tpl || '';
+  const map = {
+    '{company_name}': s.company_name || '',
+    '{ip}': s.ip || '',
+    '{supplier_fio}': s.supplier_fio || '',
+    '{director_fio}': s.director_fio || '',
+    '{inn}': s.inn || '',
+    '{phone}': s.phone_e164 || '',
+    '{email}': s.email || '',
+    '{address}': s.address || '',
+    '{purchase_object_name}': s.purchase_object_name || '',
+    '{source_file}': s.source_file || '',
+  };
+  for (const k of Object.keys(map)) out = out.split(k).join(map[k]);
+  return out;
+}
+
+/* ===========================
+   Routing
+=========================== */
+function setActiveNav(page) {
+  document.querySelectorAll('[data-nav]').forEach(a => {
+    if (a.dataset.nav === page) a.style.color = 'var(--text)';
+    else a.style.color = 'var(--muted)';
+  });
+}
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('is-active'));
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('is-active');
+  setActiveNav(page);
+}
+
+function currentRoute() {
+  const h = (location.hash || '#cards').slice(1);
+  const [page, qs] = h.split('?');
+  const params = new URLSearchParams(qs || '');
+  return { page: page || 'cards', params };
+}
+
+/* ===========================
+   Render: Cards/Table
+=========================== */
+async function renderCards() {
+  const q = document.getElementById('qInput').value || '';
+  const statusRaw = document.getElementById('statusSel').value;
+  const status = (statusRaw === 'all') ? '' : statusRaw;
+  const view = document.getElementById('viewSel').value;
+
+  const suppliers = await store.query({q, status});
+  // clean selection (remove ids that are gone)
+  let changed = false;
+  for (const id of Array.from(selected)) {
+    if (!(await existsIdInDb(Number(id)))) { selected.delete(Number(id)); changed=true; }
+  }
+  if (changed) saveSelectedSet(selected);
+
+  const wrap = document.getElementById('cardsWrap');
+  wrap.innerHTML = '';
+
+  if (!suppliers.length) {
+    wrap.innerHTML = '<div class="muted panel">Ничего не найдено.</div>';
+    updateSelectedUI(selected);
+    return;
+  }
+
+  if (view === 'table') {
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'tablewrap';
+    tableWrap.innerHTML = `
+      <table class="table">
+        <thead><tr>
+          <th>✓</th>
+          <th>Компания</th><th>ИП</th><th>ФИО поставщика</th><th>ФИО руководителя</th><th>Телефон</th><th>Email</th><th>ИНН</th><th>Адрес</th><th>Объект</th><th>Источник</th><th>Статус</th><th>Сообщение</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>`;
+    const tbody = tableWrap.querySelector('tbody');
+    for (const s of suppliers) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="checkbox" class="card-select" data-id="${s.id}" /></td>
+        <td>${escapeHtml(s.company_name)}</td>
+        <td>${escapeHtml(s.ip||'')}</td>
+        <td>${escapeHtml(s.supplier_fio||'')}</td>
+        <td>${escapeHtml(s.director_fio)}</td>
+        <td>${escapeHtml(s.phone_e164)}</td>
+        <td>${escapeHtml(s.email)}</td>
+        <td>${escapeHtml(s.inn)}</td>
+        <td>${escapeHtml(s.address)}</td>
+        <td><div class="cell-scroll">${escapeHtml(s.purchase_object_name||'')}</div></td>
+        <td>${escapeHtml(s.source_file||'')}</td>
+        <td>${escapeHtml(s.status||'')}</td>
+        <td>
+          <button class="btn btn--ghost" type="button" data-copy-msg="1" data-id="${s.id}" style="padding:6px 10px;border-radius:10px">Copy</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    wrap.appendChild(tableWrap);
+  } else {
+    const cards = document.createElement('div');
+    cards.className = 'cards';
+    for (const s of suppliers) {
+      const card = document.createElement('div');
+      card.className = 'card2' + (s.status === 'new' ? ' new' : '');
+      card.id = 'card-' + s.id;
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="checkboxWrap"><input type="checkbox" class="card-select" data-id="${s.id}" /></div>
+            <div class="card-titlewrap">
+              <div class="company">${escapeHtml(buildDisplayName(s) || s.company_name)}</div>
+              ${s.director_fio ? `<div class="muted" style="margin-top:2px;">ФИО руководителя: ${escapeHtml(s.director_fio)}</div>` : ``}
+            </div>
+          </div>
+          <div class="card-actions">
+            ${s.status === 'new' ? '<span class="badge">new</span>' : ''}
+            <button class="btn btn--ghost btn--mini btn--wa" type="button" data-wa-msg data-id="${s.id}" title="Открыть WhatsApp с готовым текстом">WA</button>
+            <button class="btn btn--ghost btn--mini btn--tg" type="button" data-tg-msg data-id="${s.id}" title="Открыть Telegram (текст будет готов)">TG</button>
+            <button class="btn btn--ghost btn--mini" type="button" data-copy-msg data-id="${s.id}" title="Скопировать текст сообщения">Copy</button>
+            <button class="btn btn--ghost btn--mini" type="button" data-toggle-details data-id="${s.id}">Подробнее</button>
+            <button class="btn btn--danger btn--mini" type="button" data-delete-one="${s.id}">Удалить</button>
+          </div>
+        </div>
+
+        <div class="row"><div class="k">Телефон:</div><div class="v">${escapeHtml(s.phone_e164)}</div></div>
+        ${s.email ? `<div class="row"><div class="k">Email:</div><div class="v">${escapeHtml(s.email)}</div></div>` : ''}
+
+        <div class="details">
+          <div class="row"><div class="k">ИНН:</div><div class="v">${escapeHtml(s.inn)}</div></div>
+          ${s.company_name ? `<div class="row"><div class="k">Компания:</div><div class="v">${escapeHtml(s.company_name)}</div></div>` : ``}
+          ${s.ip ? `<div class="row"><div class="k">ИП:</div><div class="v">${escapeHtml(s.ip)}</div></div>` : ``}
+          ${s.supplier_fio ? `<div class="row"><div class="k">ФИО поставщика:</div><div class="v">${escapeHtml(s.supplier_fio)}</div></div>` : ``}
+          ${s.director_fio ? `<div class="row"><div class="k">ФИО руководителя:</div><div class="v">${escapeHtml(s.director_fio)}</div></div>` : ``}
+          ${s.telegram_username ? `<div class="row"><div class="k">Telegram:</div><div class="v"><a href="https://t.me/${encodeURIComponent(s.telegram_username)}" target="_blank" rel="noopener">@${escapeHtml(s.telegram_username)}</a></div></div>` : ''}
+          <div class="row"><div class="k">Объект:</div><div class="v trunc">${escapeHtml(s.purchase_object_name||'')}</div></div>
+          <div class="row"><div class="k">Адрес:</div><div class="v trunc">${escapeHtml(s.address)}</div></div>
+          <div class="row"><div class="k">Источник:</div><div class="v muted trunc">${escapeHtml(s.source_file||'')}</div></div>
+          <div class="row"><div class="k">Статус:</div><div class="v">
+            <select class="select" data-status-sel="${s.id}" style="min-width:160px">
+              ${STATUS_LIST.map(st => `<option value="${st}" ${st===s.status?'selected':''}>${st}</option>`).join('')}
+            </select>
+          </div></div>
+        </div>
+      `;
+      cards.appendChild(card);
+    }
+    wrap.appendChild(cards);
+  }
+
+  updateSelectedUI(selected);
+}
+
+function escapeHtml(s){
+  return String(s ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+
+function buildDisplayName(s){
+  const company = cleanText((s && s.company_name) || "");
+  const ip = cleanText((s && s.ip) || "");
+  const fio = cleanText((s && s.supplier_fio) || "");
+  if (company) return company;
+  if (fio) return (ip ? (ip + " " + fio) : fio).trim();
+  return "";
+}
+
+async function existsIdInDb(id) {
+  const all = await store.getAll();
+  return all.some(x => Number(x.id) === Number(id));
+}
+
+/* ===========================
+   Queue logic
+=========================== */
+let queueIds = [];
+let queueSuppliers = [];
+let qIdx = 0;
+
+function loadQueuePos() {
+  try {
+    const n = Number(localStorage.getItem(APP.QUEUE_POS_KEY));
+    if (Number.isFinite(n) && n >= 0) return n;
+  } catch(e) {}
+  return 0;
+}
+function saveQueuePos(n) {
+  localStorage.setItem(APP.QUEUE_POS_KEY, String(n));
+}
+
+function renderQueueCurrent() {
+  if (!queueSuppliers.length) return;
+  if (qIdx < 0) qIdx = 0;
+  if (qIdx >= queueSuppliers.length) qIdx = queueSuppliers.length - 1;
+  saveQueuePos(qIdx);
+
+  const s = queueSuppliers[qIdx];
+  document.getElementById('progressBadge').textContent = `${qIdx+1}/${queueSuppliers.length}`;
+  document.getElementById('qCompany').textContent = buildDisplayName(s) || s.company_name || '';
+  document.getElementById('qDirector').textContent = s.director_fio ? ('ФИО руководителя: ' + s.director_fio) : '';
+  document.getElementById('qPhone').textContent = s.phone_e164 || '';
+  document.getElementById('qEmail').textContent = s.email || '';
+  document.getElementById('qInn').textContent = s.inn || '';
+  document.getElementById('qAddress').textContent = s.address || '';
+  document.getElementById('qSource').textContent = s.source_file || '';
+  document.getElementById('qStatus').textContent = s.status || '';
+  document.getElementById('openCardLink').href = `#cards?id=${s.id}`;
+}
+
+async function loadQueue() {
+  queueIds = Array.from(loadSelectedSet()).map(Number).filter(Number.isFinite);
+  if (!queueIds.length) {
+    document.getElementById('queueEmpty').style.display = 'block';
+    document.getElementById('queueUi').style.display = 'none';
+    return;
+  }
+  document.getElementById('queueEmpty').style.display = 'none';
+  document.getElementById('queueUi').style.display = 'block';
+  queueSuppliers = await store.getByIds(queueIds);
+  // keep order as ids order
+  const map = new Map(queueSuppliers.map(s => [Number(s.id), s]));
+  queueSuppliers = queueIds.map(id => map.get(Number(id))).filter(Boolean);
+
+  qIdx = loadQueuePos();
+  if (qIdx >= queueSuppliers.length) qIdx = queueSuppliers.length - 1;
+  if (qIdx < 0) qIdx = 0;
+  renderQueueCurrent();
+}
+
+/* ===========================
+   Import UI logic
+=========================== */
+function renderImportReport(rep) {
+  const box = document.getElementById('importReport');
+  if (!rep) { box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display = 'block';
+
+  const reasons = rep.reasons || {};
+  const parts = Object.keys(reasons)
+    .sort((a,b) => (reasons[b]||0)-(reasons[a]||0))
+    .map(k => `${REASON_RU[k] || k}: <b>${reasons[k]}</b>`)
+    .join('; ');
+
+
+  let hintHtml = '';
+  if ((rep.inserted||0)===0 && (rep.updated||0)===0 && (rep.skipped||0)>0 && (reasons.not_mobile||0)===(rep.skipped||0)) {
+    hintHtml = `<div class="hint" style="margin-top:10px;padding:10px 12px;border:1px solid rgba(110,231,255,.25);border-radius:12px;background:rgba(110,231,255,.06)">
+      Похоже, во всех файлах телефоны выглядят как <b>городские</b> (не мобильные). Если хотите сохранить такие карточки — включите галочку <b>«Разрешить НЕ-мобильные номера»</b> и импортируйте ещё раз.
+    </div>`;
+  }
+  const skippedList = (rep.skipped_rows || []).slice(0, 200).map(r => {
+    const label = (REASON_RU[r.reason] || r.reason);
+    const det = (r.detail ? ` <span class="muted">(${escapeHtml(r.detail)})</span>` : "");
+    return `<div class="muted small">${escapeHtml(r.file)} — ${escapeHtml(label)}${det}</div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-weight:800">Отчет импорта</div>
+        <div class="muted small">Добавлено: <b>${rep.inserted||0}</b> • Обновлено: <b>${rep.updated||0}</b> • Пропущено: <b>${rep.skipped||0}</b></div>
+      </div>
+      <button class="btn btn--ghost" type="button" id="clearReportBtn" style="padding:8px 10px">Скрыть</button>
+    </div>
+    <div class="muted" style="margin-top:8px">${parts || ''}</div>
+    ${hintHtml || ''}
+    ${skippedList ? `<div style="margin-top:10px">${skippedList}</div>` : ''}
+  `;
+
+  document.getElementById('clearReportBtn').onclick = () => {
+    localStorage.removeItem(APP.IMPORT_REPORT_KEY);
+    renderImportReport(null);
+  };
+}
+
+async function doImport(files, opts) {
+  const allowNonMobile = !!(opts && opts.allowNonMobile);
+  const allowNoEmail   = !!(opts && opts.allowNoEmail);
+  const allowNoInn     = !!(opts && opts.allowNoInn);
+  const allowNoPhone   = !!(opts && opts.allowNoPhone);
+	  const allowPdfOcr    = !!(opts && opts.allowPdfOcr);
+  const ocrMode = String(opts && opts.ocrMode || 'first');
+  const ocrPageLimit = Number(opts && opts.ocrPageLimit || 0);
+  const ocrScale = Number(opts && opts.ocrScale || 2.0);
+  let ocrPagesStr = '';
+  let ocrPagesLabel = '';
+  if (allowPdfOcr) {
+    if (ocrMode === 'all' || ocrPageLimit === 0) {
+      ocrPagesStr = '';
+      ocrPagesLabel = '(все страницы)';
+    } else if (ocrMode === 'last') {
+      const n = Math.max(1, Math.min(ocrPageLimit || 1, MAX_PAGES));
+      ocrPagesStr = `last:${n}`;
+      ocrPagesLabel = `(посл. ${n})`;
+    } else if (ocrMode === 'requisites') {
+      ocrPagesStr = 'last:2';
+      ocrPagesLabel = '(реквизиты: посл. 2)';
+    } else {
+      const n = Math.max(1, Math.min(ocrPageLimit || 1, MAX_PAGES));
+      ocrPagesStr = `1-${n}`;
+      ocrPagesLabel = `(первые ${n})`;
+    }
+  }
+  const onProgress = opts && opts.onProgress;
+
+  const requireMobile = !allowNonMobile; // default: mobile only
+  const requireEmail  = !allowNoEmail;   // default: email optional
+  const requireInn    = !allowNoInn;
+  const requirePhone  = !allowNoPhone;
+
+  let inserted = 0, updated = 0, skipped = 0;
+  const reasons = {};
+  const skipped_rows = [];
+  const goodSuppliers = [];
+
+  const addReason = (r, file, detail=null) => {
+  skipped += 1;
+  const raw = String(r || "unknown");
+  const key = raw.includes(":") ? raw.split(":", 1)[0].trim() : raw.trim();
+  reasons[key] = (reasons[key] || 0) + 1;
+  let det = detail;
+  if (!det && raw.includes(":")) det = raw.slice(raw.indexOf(":")+1).trim();
+  if (det && typeof det !== "string") det = String(det);
+  if (det && det.length > 300) det = det.slice(0, 300) + "…";
+  skipped_rows.push({ file, reason: key, detail: det || "" });
+};
+
+  const shouldSkipName = (name) => {
+    const lower = String(name || '').toLowerCase();
+    if (lower.startsWith('__macosx/')) return true;
+    const base = String(name || '').split('/').pop();
+    if (base && base.startsWith('._')) return true;
+    if (lower.endsWith('.ds_store')) return true;
+    return false;
+  };
+
+  const processZipBytes = async (zipBytes, parentName, depth=0, ctx={}) => {
+    if (depth > 3) { addReason('zip_too_deep', parentName || 'zip'); return; }
+    let entries = [];
+    try {
+      entries = await unzipHtmlEntries(zipBytes);
+    } catch(e) {
+      const msg = String(e && e.message || e);
+      if (msg.includes('zip_unsupported') || msg.includes('DecompressionStream')) addReason('zip_unsupported', parentName);
+      else addReason('bad_zip', parentName);
+      return;
+    }
+
+    for (const ent of entries) {
+      const name = ent.filename || parentName || 'entry';
+      if (shouldSkipName(name)) continue;
+      const lower = String(name).toLowerCase();
+
+      if (lower.endsWith('.zip')) {
+        await processZipBytes(ent.bytes, name, depth + 1, ctx);
+        continue;
+      }
+      if (lower.endsWith('.pdf')) {
+        if (!window.pdfjsLib) { addReason('pdf_unsupported', name); continue; }
+	        try {
+	          let text = await extractTextFromPdfBytes(ent.bytes);
+	        if (!text || text.trim().length < 30) {
+	          if (allowPdfOcr) {
+	            try {
+	              if (ctx.onProgress) ctx.onProgress(`OCR: ${name} ${ctx.ocrPagesLabel || ''}`.trim(), null);
+	              const ocrText = await ocrPdfViaLocalHelper(ent.bytes, name, null, ctx.ocrPagesStr, ctx.ocrScale);
+	              if (!ocrText || ocrText.trim().length < 30) {
+	                addReason('ocr_failed', name, 'OCR вернул слишком мало текста');
+	                continue;
+	              }
+	              text = ocrText;
+	            } catch(e) {
+	              const msg = String((e && e.message) ? e.message : e);
+	              addReason(msg.includes('ocr_unavailable') ? 'ocr_unavailable' : 'ocr_failed', name, msg);
+	              continue;
+	            }
+	          } else {
+	            addReason('pdf_no_text', name);
+	            continue;
+	          }
+	        }
+          const {supplier, reason} = tryParseSupplierFromPlainText(text, name, {requireMobile, requireEmail, requireInn, requirePhone});
+          if (!supplier) addReason(reason, name);
+          else goodSuppliers.push(supplier);
+        } catch(e) {
+          addReason('pdf_parse_error', name);
+        }
+        continue;
+      }
+      if (!(lower.endsWith('.html') || lower.endsWith('.htm'))) continue;
+
+      const htmlText = decodeHtmlBytes(ent.bytes);
+      const {supplier, reason} = tryParseSupplierFromHtmlText(htmlText, name, {requireMobile, requireEmail});
+      if (!supplier) addReason(reason, name);
+      else goodSuppliers.push(supplier);
+    }
+  };
+
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    const name = f.name || 'file';
+    const lower = name.toLowerCase();
+    if (onProgress) onProgress(`Файл ${i+1}/${files.length}: ${name}`, ((i)/Math.max(1, files.length)) * 100);
+    if (shouldSkipName(name)) continue;
+
+    if (lower.endsWith('.zip')) {
+      let bytes;
+      try { bytes = await readFileAsBytes(f); }
+      catch(e) { addReason('bad_zip', name); continue; }
+      await processZipBytes(bytes, name, 0, { onProgress, ocrPagesStr, ocrPagesLabel, ocrScale });
+      continue;
+    }
+
+
+    if (lower.endsWith('.pdf')) {
+      if (!window.pdfjsLib) { addReason('pdf_unsupported', name); continue; }
+      const bytes = await readFileAsBytes(f);
+	      try {
+	        let text = await extractTextFromPdfBytes(bytes);
+	        if (!text || text.trim().length < 30) {
+	          if (allowPdfOcr) {
+	            try {
+	            if (onProgress) onProgress(`OCR: ${name} ${ocrPagesLabel || ''}`.trim(), null);
+	            const ocrText = await ocrPdfViaLocalHelper(bytes, name, f, ocrPagesStr, ocrScale);
+	            if (!ocrText || ocrText.trim().length < 30) {
+	              addReason('ocr_failed', name, 'OCR вернул слишком мало текста');
+	              continue;
+	            }
+	            text = ocrText;
+	            } catch(e) {
+	              const msg = String((e && e.message) ? e.message : e);
+	              addReason(msg.includes('ocr_unavailable') ? 'ocr_unavailable' : 'ocr_failed', name, msg);
+	              continue;
+	            }
+	          } else {
+	            addReason('pdf_no_text', name);
+	            continue;
+	          }
+	        }
+        const {supplier, reason} = tryParseSupplierFromPlainText(text, name, {requireMobile, requireEmail, requireInn, requirePhone});
+        if (!supplier) addReason(reason, name);
+        else goodSuppliers.push(supplier);
+      } catch(e) {
+        addReason('pdf_parse_error', name);
+      }
+      continue;
+    }
+
+    if (lower.endsWith('.html') || lower.endsWith('.htm')) {
+      const bytes = await readFileAsBytes(f);
+      const htmlText = decodeHtmlBytes(bytes);
+      const {supplier, reason} = tryParseSupplierFromHtmlText(htmlText, name, {requireMobile, requireEmail, requireInn, requirePhone});
+      if (!supplier) addReason(reason, name);
+      else goodSuppliers.push(supplier);
+      continue;
+    }
+  }
+
+  // upsert in DB
+  const res = await store.upsertMany(goodSuppliers);
+  inserted += res.inserted;
+  updated += res.updated;
+
+  const report = { inserted, updated, skipped, reasons, skipped_rows, at: new Date().toISOString() };
+  localStorage.setItem(APP.IMPORT_REPORT_KEY, JSON.stringify(report));
+  renderImportReport(report);
+
+  flash(`Импорт завершен: добавлено ${inserted}, обновлено ${updated}, пропущено ${skipped}.`, 'ok');
+  if (onProgress) onProgress('Импорт завершен', 100);
+  // refresh UI after import
+  try {
+    const r = currentRoute();
+    if (r.page === 'cards') await renderCards();
+    if (r.page === 'queue') await loadQueue();
+  } catch(e) {}
+
+}
+
+/* ===========================
+   Bind UI events
+=========================== */
+function bindNav() {
+  window.addEventListener('hashchange', async () => {
+    const {page, params} = currentRoute();
+    showPage(page);
+    if (page === 'cards') {
+      await renderCards();
+      // if id param exists - scroll into view
+      const id = Number(params.get('id'));
+      if (Number.isFinite(id)) {
+        setTimeout(() => {
+          const el = document.getElementById('card-' + id);
+          if (el) {
+            el.scrollIntoView({behavior:'smooth', block:'start'});
+            el.style.boxShadow = '0 0 0 2px rgba(110,231,255,.35) inset';
+            setTimeout(() => el.style.boxShadow = '', 1400);
+          }
+        }, 60);
+      }
+    }
+    if (page === 'queue') await loadQueue();
+    if (page === 'message') updateSelectedCountMsg();
+  });
+}
+
+function bindImport() {
+  const dz = document.getElementById('dropzone');
+  const input = document.getElementById('fileInput');
+  const list = document.getElementById('fileList');
+  const pickBtn = document.getElementById('pickBtn');
+  const progressWrap = document.getElementById('importProgressWrap');
+  const progressText = document.getElementById('importProgressText');
+  const progressBar = document.getElementById('importProgressBar');
+  let pendingFiles = [];
+
+  function renderList(files) {
+    if (!files || files.length === 0) { list.textContent = ''; return; }
+    const names = Array.from(files).map(f => `${f.name} (${Math.round(f.size/1024)} KB)`);
+    list.textContent = `Выбрано файлов: ${files.length}
+` + names.join('\n');
+  }
+
+  pickBtn.addEventListener('click', () => input.click());
+  input.addEventListener('change', (e) => { pendingFiles = Array.from(e.target.files || []); renderList(pendingFiles); });
+
+  dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('dropzone--over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dropzone--over'));
+  dz.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dz.classList.remove('dropzone--over');
+    const dt = e.dataTransfer;
+    if (!dt || !dt.files) return;
+    pendingFiles = Array.from(dt.files || []);
+    renderList(pendingFiles);
+  });
+
+  const setProgress = (text, pct) => {
+    if (!progressWrap || !progressText || !progressBar) return;
+    progressWrap.style.display = 'block';
+    progressText.textContent = text || 'Импорт...';
+    if (pct === null || pct === undefined || !Number.isFinite(pct)) {
+      progressBar.style.width = '35%';
+    } else {
+      const v = Math.max(0, Math.min(100, pct));
+      progressBar.style.width = v + '%';
+    }
+  };
+
+  document.getElementById('importBtn').addEventListener('click', async () => {
+    const files = Array.from(pendingFiles || []);
+    if (!files.length) { flash('Не выбраны файлы. Перетащите .html или .zip, либо выберите их кнопкой.', 'error'); return; }
+    const allowNonMobile = !!document.getElementById('allowNonMobile').checked;
+    const allowNoEmail = !!document.getElementById('allowNoEmail').checked;
+    const allowNoInn = !!document.getElementById('allowNoInn').checked;
+    const allowNoPhone = !!document.getElementById('allowNoPhone').checked;
+	    const allowPdfOcr = !!(document.getElementById('allowPdfOcr') && document.getElementById('allowPdfOcr').checked);
+    const ocrMode = String((document.getElementById('ocrMode') || {}).value || 'first');
+    const ocrPageLimit = Number((document.getElementById('ocrPageLimit') || {}).value || 0);
+    const ocrScale = Number((document.getElementById('ocrScale') || {}).value || 2.0);
+    const onProgress = (text, pct) => setProgress(text, pct);
+    const hasPdf = files.some(f => (f && f.name || '').toLowerCase().endsWith('.pdf'));
+    if (allowPdfOcr && hasPdf) {
+      flash('Запущен OCR для PDF. Это может занять 1–2 минуты, дождитесь завершения импорта.', 'ok');
+    }
+    try {
+	      await doImport(files, {allowNonMobile, allowNoEmail, allowNoInn, allowNoPhone, allowPdfOcr, ocrMode, ocrPageLimit, ocrScale, onProgress});
+    } catch (e) {
+      console.error(e);
+      flash('Ошибка импорта: ' + (e && e.message ? e.message : String(e)), 'error');
+    }
+  });
+
+  // show last report if exists
+  try {
+    const rep = JSON.parse(localStorage.getItem(APP.IMPORT_REPORT_KEY) || 'null');
+    if (rep) renderImportReport(rep);
+  } catch(e) {}
+
+	  // OCR helper status
+	  const ocrStatus = document.getElementById('ocrStatus');
+	  const ocrBox = document.getElementById('allowPdfOcr');
+	  const ocrBaseInput = document.getElementById('ocrBaseInput');
+	  const ocrBaseSave = document.getElementById('ocrBaseSave');
+	  const ocrBaseReset = document.getElementById('ocrBaseReset');
+	  const ocrBaseTest = document.getElementById('ocrBaseTest');
+
+	  const readOcrBase = () => {
+	    try {
+	      const v = (localStorage.getItem('OCR_HELPER_BASE') || '').trim();
+	      return v;
+	    } catch(e) { return ''; }
+	  };
+	  const writeOcrBase = (v) => {
+	    try {
+	      if (!v) localStorage.removeItem('OCR_HELPER_BASE');
+	      else localStorage.setItem('OCR_HELPER_BASE', v);
+	    } catch(e) {}
+	  };
+
+	  if (ocrBaseInput) {
+	    const cur = readOcrBase();
+	    if (cur) ocrBaseInput.value = cur;
+	  }
+	  if (ocrBaseSave && ocrBaseInput) {
+	    ocrBaseSave.addEventListener('click', () => {
+	      const v = String(ocrBaseInput.value || '').trim();
+	      writeOcrBase(v);
+	      flash('OCR адрес сохранен' + (v ? (': ' + v) : ''), 'ok');
+	    });
+	  }
+	  if (ocrBaseReset) {
+	    ocrBaseReset.addEventListener('click', () => {
+	      writeOcrBase('');
+	      if (ocrBaseInput) ocrBaseInput.value = '';
+	      flash('OCR адрес сброшен (по умолчанию: 127.0.0.1:17871)', 'ok');
+	    });
+	  }
+	  if (ocrBaseTest) {
+	    ocrBaseTest.addEventListener('click', async () => {
+	      const base = ocrHelperBase();
+	      try {
+	        const res = await fetchJsonWithTimeout(base + '/health', 2000);
+	        if (res && res.ok && res.json && res.json.ok) {
+	          flash('OCR доступен: ' + base, 'ok');
+	        } else {
+	          flash('OCR недоступен: ' + base, 'error');
+	        }
+	      } catch (e) {
+	        flash('OCR недоступен: ' + base, 'error');
+	      }
+	    });
+	  }
+	  const refresh = async () => {
+	    if (!ocrStatus) return;
+	    if (window.__ocrBusy) {
+	      ocrStatus.textContent = 'OCR: в работе';
+	      return;
+	    }
+	    const h = await checkOcrHelper();
+	    if (h && h.ok) {
+	      const v = h.version ? ` (v${h.version})` : '';
+	      ocrStatus.textContent = 'OCR: подключен' + v;
+	    } else {
+	      ocrStatus.textContent = 'OCR: не запущен';
+	    }
+	  };
+	  if (ocrBox) ocrBox.addEventListener('change', refresh);
+	  refresh();
+	  // auto-refresh health (useful if helper is started after the page was opened)
+	  if (window.__ocrStatusTimer) clearInterval(window.__ocrStatusTimer);
+	  window.__ocrStatusTimer = setInterval(refresh, 2500);
+}
+
+function bindCards() {
+  const form = document.getElementById('filtersForm');
+  const qInput = document.getElementById('qInput');
+  const statusSel = document.getElementById('statusSel');
+  const viewSel = document.getElementById('viewSel');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // load saved filters
+  const saved = loadFilters();
+  if (saved.q) qInput.value = saved.q;
+  if (saved.status) statusSel.value = saved.status;
+  if (saved.view) viewSel.value = saved.view;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    saveFilters({ q: qInput.value, status: statusSel.value, view: viewSel.value });
+    await renderCards();
+  });
+
+  resetBtn.addEventListener('click', async () => {
+    qInput.value = '';
+    statusSel.value = 'all';
+    viewSel.value = 'cards';
+    localStorage.removeItem(APP.FILTER_KEY);
+    await renderCards();
+  });
+
+  // checkbox selection
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (!(t && t.classList && t.classList.contains('card-select'))) return;
+    const id = Number(t.dataset.id);
+    if (!Number.isFinite(id)) return;
+    if (t.checked) selected.add(id); else selected.delete(id);
+    saveSelectedSet(selected);
+  });
+
+  document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+    selected = new Set();
+    saveSelectedSet(selected);
+  });
+
+  document.getElementById('selectAllBtn').addEventListener('click', async () => {
+    const ids = await store.getIds();
+    selected = new Set(ids.map(Number).filter(Number.isFinite));
+    saveSelectedSet(selected);
+  });
+
+  document.getElementById('deleteSelectedBtn').addEventListener('click', async () => {
+    const ids = Array.from(selected);
+    if (!ids.length) { alert('Ничего не выбрано.'); return; }
+    if (!confirm(`Удалить выбранные карточки (${ids.length})?`)) return;
+    await store.deleteByIds(ids);
+    selected = new Set();
+    saveSelectedSet(selected);
+    await renderCards();
+  });
+
+  document.getElementById('deleteAllBtn').addEventListener('click', async () => {
+    if (!confirm('Удалить ВСЕ карточки из базы? Это необратимо.')) return;
+    await store.deleteAll();
+    selected = new Set();
+    saveSelectedSet(selected);
+    await renderCards();
+  });
+
+  // delete one
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-delete-one]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-delete-one'));
+    if (!Number.isFinite(id)) return;
+    if (!confirm('Удалить эту карточку?')) return;
+    await store.deleteByIds([id]);
+    selected.delete(id);
+    saveSelectedSet(selected);
+    await renderCards();
+  });
+
+  // status select on card
+  document.addEventListener('change', async (e) => {
+    const sel = e.target.closest('[data-status-sel]');
+    if (!sel) return;
+    const id = Number(sel.getAttribute('data-status-sel'));
+    const st = sel.value;
+    if (!Number.isFinite(id)) return;
+    await store.setStatus(id, st);
+    toast('Статус обновлён: ' + st);
+  });
+
+  // copy message
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-copy-msg]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const s = (await store.getByIds([id]))[0];
+    if (!s) return;
+    const msg = renderTemplate(getTemplate(), s);
+    const ok = await copyText(msg);
+    if (ok) toast('Сообщение скопировано');
+    else alert('Не удалось скопировать. Попробуйте другой браузер.');
+  });
+
+
+  // messenger actions (WA/TG) + details toggle
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-wa-msg]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const s = (await store.getByIds([id]))[0];
+    if (!s) return;
+    const msg = renderTemplate(getTemplate(), s);
+    const digits = String(s.phone_e164 || '').replace(/\D/g,'');
+    if (!digits) { toast('Нет телефона'); return; }
+    let d = String(s.phone_e164 || '').replace(/\D/g,'');
+    if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
+    const text = encodeURIComponent(msg);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    const url = isMobile
+      ? `https://wa.me/${d}?text=${text}`
+      : `https://web.whatsapp.com/send?phone=${d}&text=${text}`;
+    window.open(url, '_blank', 'noopener');
+  });
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-tg-msg]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const s = (await store.getByIds([id]))[0];
+    if (!s) return;
+    const msg = renderTemplate(getTemplate(), s);
+
+    // if we have @username -> open direct, but text can't be prefilled reliably -> copy it
+    if (s.telegram_username) {
+      const ok = await copyText(msg);
+      if (ok) toast('Текст скопирован — вставь в Telegram');
+      window.open(`https://t.me/${encodeURIComponent(s.telegram_username)}`, '_blank', 'noopener');
+      return;
+    }
+
+    // no username: copy + open Telegram app/site
+    const ok = await copyText(msg);
+    if (ok) toast('Текст скопирован — вставь в Telegram');
+    window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+  });
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-toggle-details]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const card = document.getElementById('card-' + id);
+    if (!card) return;
+    card.classList.toggle('is-open');
+    btn.textContent = card.classList.contains('is-open') ? 'Свернуть' : 'Подробнее';
+  });
+
+  // export selected
+  async function exportSelected(kind) {
+    const ids = Array.from(selected);
+    if (!ids.length) { alert('Сначала выберите хотя бы одну карточку.'); return; }
+    const suppliers = await store.getByIds(ids);
+    const rows = suppliers.map(s => ({
+  'Компания': s.company_name || '',
+  'ИП': s.ip || '',
+  'ФИО поставщика': s.supplier_fio || '',
+  'ФИО руководителя': s.director_fio || '',
+  'Телефон': s.phone_e164 || '',
+  'Email': s.email || '',
+  'ИНН': s.inn || '',
+  'Адрес': s.address || '',
+  'Название объекта закупки': s.purchase_object_name || '',
+  'Заметки': s.notes || '',
+}));
+if (kind === 'csv') downloadCsv(rows, 'suppliers_selected.csv');
+    else downloadXls(rows, 'suppliers_selected.xls', 'suppliers_selected');
+  }
+
+  document.getElementById('exportSelectedCsv').addEventListener('click', () => exportSelected('csv'));
+  document.getElementById('exportSelectedExcel').addEventListener('click', () => exportSelected('xls'));
+}
+
+function updateSelectedCountMsg() {
+  const n = Array.from(loadSelectedSet()).length;
+  document.getElementById('selCountMsg').textContent = n ? `Выбрано карточек: ${n}` : 'Карточки не выбраны (перейдите в “Карточки” и поставьте галочки).';
+}
+
+function bindMessage() {
+  const ta = document.getElementById('msgTemplate');
+  const taHtml = document.getElementById('msgTemplateHtml');
+  const sendAsHtml = document.getElementById('sendAsHtml');
+  const smtpUser = document.getElementById('smtpUser');
+  const smtpPass = document.getElementById('smtpPass');
+  const smtpFromName = document.getElementById('smtpFromName');
+  const smtpSubjectTpl = document.getElementById('smtpSubjectTpl');
+  const smtpDailyLimit = document.getElementById('smtpDailyLimit');
+  const smtpDelayMs = document.getElementById('smtpDelayMs');
+  const emailLimitHint = document.getElementById('emailLimitHint');
+
+  const saved = localStorage.getItem(APP.TEMPLATE_KEY);
+  ta.value = normalizeTemplateText(saved || DEFAULT_TEMPLATE);
+  const savedHtml = localStorage.getItem(APP.TEMPLATE_HTML_KEY);
+  taHtml.value = savedHtml || '';
+
+  try {
+    const smtpSaved = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
+    smtpUser.value = smtpSaved.user || '';
+    smtpPass.value = smtpSaved.pass || '';
+    smtpFromName.value = smtpSaved.fromName || '';
+    smtpSubjectTpl.value = smtpSaved.subjectTpl || 'Предложение по поставкам из Китая — {company_name}';
+    smtpDailyLimit.value = smtpSaved.dailyLimit || 250;
+    smtpDelayMs.value = smtpSaved.delayMs || 1200;
+  } catch (_) {
+    smtpSubjectTpl.value = 'Предложение по поставкам из Китая — {company_name}';
+  }
+
+  updateSelectedCountMsg();
+  window.addEventListener('focus', updateSelectedCountMsg);
+
+  function getSmtpSettings() {
+    return {
+      user: String(smtpUser.value || '').trim(),
+      pass: String(smtpPass.value || '').trim(),
+      fromName: String(smtpFromName.value || '').trim(),
+      subjectTpl: String(smtpSubjectTpl.value || '').trim() || 'Предложение по поставкам из Китая — {company_name}',
+      dailyLimit: Number(smtpDailyLimit.value || 250),
+      delayMs: Number(smtpDelayMs.value || 1200),
+    };
+  }
+
+  function saveSmtpSettings() {
+    localStorage.setItem(APP.SMTP_KEY, JSON.stringify(getSmtpSettings()));
+  }
+
+  async function checkEmailLimit(requestedCount) {
+    const s = getSmtpSettings();
+    const base = ocrHelperBase();
+    const r = await fetch(base + '/email/check-limit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requested: Number(requestedCount || 0),
+        dailyLimit: Number(s.dailyLimit || 250),
+      })
+    });
+    const j = await r.json();
+    if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'email_limit_check_failed');
+    const msg = `Email лимит: отправлено сегодня ${j.sentToday}/${j.dailyLimit}, осталось ${j.remaining}.`;
+    emailLimitHint.textContent = msg;
+    return j;
+  }
+
+  document.getElementById('saveTemplateBtn').addEventListener('click', () => {
+    localStorage.setItem(APP.TEMPLATE_KEY, normalizeTemplateText(ta.value || ''));
+    ta.value = normalizeTemplateText(ta.value || '');
+    localStorage.setItem(APP.TEMPLATE_HTML_KEY, taHtml.value || '');
+    saveSmtpSettings();
+    updateSelectedCountMsg();
+    toast('Сохранено');
+  });
+
+  document.querySelectorAll('[data-copy]').forEach(el => {
+    el.addEventListener('click', async () => {
+      const v = el.getAttribute('data-copy');
+      const ok = await copyText(v);
+      if (ok) toast('Скопировано: ' + v);
+      else toast('Не удалось скопировать');
+    });
+  });
+
+  async function exportMessages(kind) {
+    const ids = Array.from(loadSelectedSet());
+    if (!ids.length) { alert('Сначала выберите карточки на вкладке “Карточки”.'); return; }
+    const suppliers = await store.getByIds(ids);
+    const tpl = normalizeTemplateText(ta.value || '');
+    const rows = suppliers.map(s => ({
+      company_name: s.company_name || '',
+      director_fio: s.director_fio || '',
+      phone_e164: s.phone_e164 || '',
+      email: s.email || '',
+      inn: s.inn || '',
+      address: s.address || '',
+      source_file: s.source_file || '',
+      status: s.status || '',
+      message: renderTemplate(tpl, s),
+    }));
+    if (kind === 'csv') downloadCsv(rows, 'messages_selected.csv');
+    else downloadXls(rows, 'messages_selected.xls', 'messages_selected');
+  }
+
+  document.getElementById('exportMsgCsvBtn').addEventListener('click', () => exportMessages('csv'));
+  document.getElementById('exportMsgXlsBtn').addEventListener('click', () => exportMessages('xls'));
+
+  document.getElementById('checkEmailLimitBtn').addEventListener('click', async () => {
+    try {
+      const ids = Array.from(loadSelectedSet());
+      await checkEmailLimit(ids.length);
+      toast('Лимит проверен');
+    } catch (e) {
+      toast('Ошибка лимита: ' + String(e && e.message ? e.message : e));
+    }
+  });
+
+  document.getElementById('sendEmailSelectedBtn').addEventListener('click', async () => {
+    try {
+      const ids = Array.from(loadSelectedSet()).map(Number).filter(Number.isFinite);
+      if (!ids.length) { alert('Сначала выберите карточки на вкладке “Карточки”.'); return; }
+      saveSmtpSettings();
+      const smtp = getSmtpSettings();
+      if (!smtp.user || !smtp.pass) {
+        alert('Заполните Gmail логин и App Password.');
+        return;
+      }
+
+      const suppliers = await store.getByIds(ids);
+      const tpl = normalizeTemplateText(ta.value || '');
+      const tplHtml = taHtml.value || '';
+      const subjectTpl = smtp.subjectTpl || 'Предложение по поставкам из Китая — {company_name}';
+      const useHtml = !!(sendAsHtml && sendAsHtml.checked && tplHtml.trim());
+      const messages = suppliers
+        .filter(s => !!(s && s.email))
+        .map(s => ({
+          to: String(s.email || '').trim(),
+          subject: renderTemplate(subjectTpl, s),
+          text: renderTemplate(tpl, s),
+          html: useHtml ? renderTemplate(tplHtml, s) : '',
+          supplierId: s.id
+        }));
+
+      if (!messages.length) {
+        alert('У выбранных карточек нет Email.');
+        return;
+      }
+
+      const lim = await checkEmailLimit(messages.length);
+      if (!lim.canSend) {
+        const proceed = confirm(`Лимит не позволяет отправить все письма.\nМожно отправить: ${lim.remaining} из ${messages.length}.\nПродолжить?`);
+        if (!proceed) return;
+      }
+
+      const proceedSend = confirm(`Отправить ${messages.length} писем с ${smtp.user}?`);
+      if (!proceedSend) return;
+
+      const base = ocrHelperBase();
+      const r = await fetch(base + '/email/send-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          smtp: {
+            user: smtp.user,
+            pass: smtp.pass,
+            fromName: smtp.fromName,
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: 'tls'
+          },
+          dailyLimit: Number(smtp.dailyLimit || 250),
+          delayMs: Number(smtp.delayMs || 1200),
+          messages
+        })
+      });
+      const j = await r.json();
+      if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'email_send_failed');
+
+      let errPart = '';
+      try {
+        const firstErr = (j.results || []).find(x => x && x.ok === false && x.error);
+        if (firstErr) errPart = ` Первая ошибка: ${String(firstErr.error).slice(0, 240)}`;
+      } catch (_) {}
+      emailLimitHint.textContent = `Email отправка: sent=${j.sent}, failed=${j.failed}, skippedByLimit=${j.skippedByLimit}, осталось=${j.remaining}.${errPart}`;
+      toast(`Email: отправлено ${j.sent}, ошибок ${j.failed}`);
+    } catch (e) {
+      toast('Ошибка отправки Email: ' + String(e && e.message ? e.message : e));
+    }
+  });
+}
+
+function bindQueue() {
+  document.getElementById('prevBtn').addEventListener('click', () => { qIdx -= 1; renderQueueCurrent(); });
+  document.getElementById('nextBtn').addEventListener('click', () => { qIdx += 1; renderQueueCurrent(); });
+
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    if (!queueSuppliers.length) return;
+    const s = queueSuppliers[qIdx];
+    const msg = renderTemplate(getTemplate(), s);
+    const ok = await copyText(msg);
+    toast(ok ? 'Скопировано' : 'Не удалось скопировать');
+  });
+
+  document.querySelectorAll('[data-set-status]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!queueSuppliers.length) return;
+      const s = queueSuppliers[qIdx];
+      const st = btn.getAttribute('data-set-status');
+      const ok = await store.setStatus(s.id, st);
+      if (ok) {
+        // update in memory
+        queueSuppliers[qIdx].status = st;
+        renderQueueCurrent();
+        toast('Статус обновлён: ' + st);
+        // auto next
+        if (qIdx < queueSuppliers.length - 1) { qIdx += 1; renderQueueCurrent(); }
+      }
+    });
+  });
+
+  document.getElementById('clearQueuePos').addEventListener('click', () => {
+    localStorage.removeItem(APP.QUEUE_POS_KEY);
+    qIdx = 0;
+    renderQueueCurrent();
+    toast('Позиция очереди сброшена');
+  });
+}
+
+function bindTopExports() {
+  document.getElementById('downloadAllCsv').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const suppliers = await store.getAll();
+    const rows = suppliers.map(s => ({
+  'Компания': s.company_name || '',
+  'ИП': s.ip || '',
+  'ФИО поставщика': s.supplier_fio || '',
+  'ФИО руководителя': s.director_fio || '',
+  'Телефон': s.phone_e164 || '',
+  'Email': s.email || '',
+  'ИНН': s.inn || '',
+  'Адрес': s.address || '',
+  'Название объекта закупки': s.purchase_object_name || '',
+  'Заметки': s.notes || '',
+}));
+downloadCsv(rows, 'suppliers_all.csv');
+  });
+
+  document.getElementById('downloadDbJson').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const obj = await store.exportJson();
+    const json = JSON.stringify(obj, null, 2);
+    downloadBlob(new Blob([json], {type:'application/json;charset=utf-8'}), 'vadim-filter-tool_db.json');
+  });
+
+  document.getElementById('importDbJson').addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try {
+      const txt = await f.text();
+      const obj = JSON.parse(txt);
+      if (!confirm('Импорт БД заменит текущую базу в браузере. Продолжить?')) return;
+      await store.importJson(obj);
+      flash('База импортирована.', 'ok');
+      await renderCards();
+    } catch(err) {
+      console.error(err);
+      flash('Не удалось импортировать БД: ' + (err && err.message ? err.message : String(err)), 'error');
+    } finally {
+      e.target.value = '';
+    }
+  });
+}
+
+/* ===========================
+   Boot
+=========================== */
+(async () => {
+  await store.init();
+
+  bindNav();
+  bindImport();
+  bindCards();
+  bindMessage();
+  bindQueue();
+  bindTopExports();
+
+  // initial route
+  const {page} = currentRoute();
+  showPage(page);
+
+  if (page === 'cards') await renderCards();
+  if (page === 'queue') await loadQueue();
+  if (page === 'message') updateSelectedCountMsg();
+
+  // ensure defaults in storage
+  if (!localStorage.getItem(APP.TEMPLATE_KEY)) localStorage.setItem(APP.TEMPLATE_KEY, DEFAULT_TEMPLATE);
+
+  // When opening without hash
+  if (!location.hash) location.hash = '#cards';
+})();
+</script>
+</body>
+</html>

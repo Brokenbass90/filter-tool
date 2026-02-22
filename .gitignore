@@ -1,0 +1,4 @@
+.DS_Store
+helper/node_modules/
+helper/.cache/
+helper/ocr_server.log
