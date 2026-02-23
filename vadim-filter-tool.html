@@ -629,7 +629,7 @@ const STATUS_LIST = [
   'followup_3d','followup_7d','not_relevant','no_answer','ignore','ok'
 ];
 const MAX_PAGES = 25;
-const BRAND_LOGO_URL = 'https://raw.githubusercontent.com/Brokenbass90/filter-tool/main/assets/strong-bridge-logo.png';
+const BRAND_LOGO_URL = 'https://raw.githubusercontent.com/Brokenbass90/filter-tool/main/logo.png';
 
 function daysFromNow(days) {
   const d = new Date();
@@ -735,6 +735,36 @@ function chooseSubjectVariant(subjectTpl, supplier) {
   return parts[idx];
 }
 
+function normalizePhoneForWhatsApp(raw) {
+  let d = String(raw || '').replace(/\D/g, '');
+  if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
+  return d.length >= 10 ? d : '';
+}
+
+function getSavedSmtpSubjectTemplate() {
+  try {
+    const smtp = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
+    return String(smtp.subjectTpl || '').trim() || 'Предложение по поставкам из Китая — {company_name}';
+  } catch (_) {
+    return 'Предложение по поставкам из Китая — {company_name}';
+  }
+}
+
+function renderContactButtons(s, mini = false) {
+  const cls = mini ? 'btn btn--ghost btn--mini' : 'btn btn--ghost';
+  const out = [];
+  if (normalizePhoneForWhatsApp(s.phone_e164)) {
+    out.push(`<button class="${cls} btn--wa" type="button" data-wa-msg data-id="${s.id}" title="Открыть WhatsApp">WhatsApp</button>`);
+  }
+  if (s.telegram_username) {
+    out.push(`<button class="${cls} btn--tg" type="button" data-tg-msg data-id="${s.id}" title="Открыть Telegram">Telegram</button>`);
+  }
+  if (s.email) {
+    out.push(`<button class="${cls}" type="button" data-mail-msg data-id="${s.id}" title="Открыть Email">Email</button>`);
+  }
+  return out.join('');
+}
+
 async function sendBatchViaHelper({ smtp, messages }) {
   const base = ocrHelperBase();
   const r = await fetch(base + '/email/send-batch', {
@@ -779,7 +809,7 @@ const DEFAULT_EMAIL_HTML_TEMPLATE = `<html><body style="margin:0;padding:0;backg
         <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6ecf5;">
           <tr>
             <td style="padding:18px 22px;background:#0f172a;color:#ffffff;">
-              <img src="cid:brandlogo@sb" alt="Strong Bridge" width="160" style="width:160px;max-width:100%;height:auto;display:block;margin-bottom:10px;" />
+              <img src="${BRAND_LOGO_URL}" alt="Strong Bridge" width="160" style="width:160px;max-width:100%;height:auto;display:block;margin-bottom:10px;" />
               <div style="font-size:20px;font-weight:700;line-height:1.3;">Поставки из Китая под ваш проект</div>
             </td>
           </tr>
@@ -2410,8 +2440,7 @@ async function renderCards() {
           </div>
           <div class="card-actions">
             ${s.status === 'new' ? '<span class="badge">new</span>' : ''}
-            <button class="btn btn--ghost btn--mini btn--wa" type="button" data-wa-msg data-id="${s.id}" title="Открыть WhatsApp с готовым текстом">WA</button>
-            <button class="btn btn--ghost btn--mini btn--tg" type="button" data-tg-msg data-id="${s.id}" title="Открыть Telegram (текст будет готов)">TG</button>
+            ${renderContactButtons(s, true)}
             <button class="btn btn--ghost btn--mini" type="button" data-copy-msg data-id="${s.id}" title="Скопировать текст сообщения">Copy</button>
             <button class="btn btn--ghost btn--mini" type="button" data-toggle-details data-id="${s.id}">Подробнее</button>
             <button class="btn btn--danger btn--mini" type="button" data-delete-one="${s.id}">Удалить</button>
@@ -2428,6 +2457,7 @@ async function renderCards() {
           ${s.supplier_fio ? `<div class="row"><div class="k">ФИО поставщика:</div><div class="v">${escapeHtml(s.supplier_fio)}</div></div>` : ``}
           ${s.director_fio ? `<div class="row"><div class="k">ФИО руководителя:</div><div class="v">${escapeHtml(s.director_fio)}</div></div>` : ``}
           ${s.telegram_username ? `<div class="row"><div class="k">Telegram:</div><div class="v"><a href="https://t.me/${encodeURIComponent(s.telegram_username)}" target="_blank" rel="noopener">@${escapeHtml(s.telegram_username)}</a></div></div>` : ''}
+          <div class="row"><div class="k">Каналы связи:</div><div class="v" style="display:flex;gap:6px;flex-wrap:wrap;">${renderContactButtons(s, true) || '<span class="muted">не найдены</span>'}</div></div>
           <div class="row"><div class="k">Объект:</div><div class="v trunc">${escapeHtml(s.purchase_object_name||'')}</div></div>
           <div class="row"><div class="k">Адрес:</div><div class="v trunc">${escapeHtml(s.address)}</div></div>
           <div class="row"><div class="k">Источник:</div><div class="v muted trunc">${escapeHtml(s.source_file||'')}</div></div>
@@ -3097,10 +3127,8 @@ function bindCards() {
     const s = (await store.getByIds([id]))[0];
     if (!s) return;
     const msg = renderTemplate(getTemplate(), s);
-    const digits = String(s.phone_e164 || '').replace(/\D/g,'');
-    if (!digits) { toast('Нет телефона'); return; }
-    let d = String(s.phone_e164 || '').replace(/\D/g,'');
-    if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
+    const d = normalizePhoneForWhatsApp(s.phone_e164);
+    if (!d) { toast('Нет телефона для WhatsApp'); return; }
     const text = encodeURIComponent(msg);
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
     const url = isMobile
@@ -3130,6 +3158,19 @@ function bindCards() {
     const ok = await copyText(msg);
     if (ok) toast('Текст скопирован — вставь в Telegram');
     window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+  });
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-mail-msg]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const s = (await store.getByIds([id]))[0];
+    if (!s || !s.email) { toast('Нет email'); return; }
+    const msg = renderTemplate(getTemplate(), s);
+    const subject = renderTemplate(getSavedSmtpSubjectTemplate(), s);
+    const url = `mailto:${encodeURIComponent(String(s.email || '').trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank', 'noopener');
   });
 
   document.addEventListener('click', (e) => {

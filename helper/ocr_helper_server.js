@@ -235,7 +235,7 @@ app.post("/email/send-batch", async (req, res) => {
       } else {
         try {
           const mail = { from, to, subject, text: text || undefined, html: html || undefined };
-          if (logoImage && html) {
+          if (logoImage && html && html.includes('cid:')) {
             const cid = html.includes('cid:brandlogo@sb') ? 'brandlogo@sb' : 'brandlogo';
             mail.attachments = [{
               filename: `logo.${logoImage.ext}`,
