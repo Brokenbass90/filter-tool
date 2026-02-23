@@ -1,7 +1,10 @@
-\
 @echo off
-setlocal
-cd /d %~dp0
+setlocal EnableExtensions EnableDelayedExpansion
+cd /d "%~dp0"
+
+set "PORT=17871"
+set "HEALTH_URL=http://127.0.0.1:%PORT%/health"
+set "APP_HTML=%cd%\vadim-filter-tool.html"
 
 where node >nul 2>nul
 if errorlevel 1 (
@@ -20,30 +23,67 @@ if errorlevel 1 (
   )
 )
 
-rem Освобождаем порт (если предыдущий OCR helper "завис")
-for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command ^
-  "$c = Get-NetTCPConnection -LocalPort 17871 -State Listen -ErrorAction SilentlyContinue; if($c){$c.OwningProcess}"`) do set OLD_PID=%%P
-
-if not "%OLD_PID%"=="" (
-  echo Порт 17871 занят (PID=%OLD_PID%). Останавливаю...
-  taskkill /PID %OLD_PID% /F >nul 2>nul
+echo [0/3] Останавливаю старые процессы OCR...
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command "$p=Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue; if($p){$p|%%{$_.OwningProcess}}"`) do (
+  if not "%%P"=="" (
+    echo - taskkill PID %%P
+    taskkill /PID %%P /F >nul 2>nul
+  )
+)
+for /f "tokens=5" %%P in ('netstat -aon ^| findstr :%PORT% ^| findstr LISTENING') do (
+  if not "%%P"=="" (
+    echo - taskkill PID %%P
+    taskkill /PID %%P /F >nul 2>nul
+  )
+)
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command "$p=Get-CimInstance Win32_Process | ? { $_.Name -match '^node(.exe)?$' -and $_.CommandLine -match 'ocr_helper_server\\.js' }; if($p){$p|%%{$_.ProcessId}}"`) do (
+  if not "%%P"=="" (
+    echo - taskkill OCR helper PID %%P
+    taskkill /PID %%P /F >nul 2>nul
+  )
 )
 
-if not exist "helper\node_modules" (
-  echo [1/2] Устанавливаю зависимости OCR helper (npm install)...
+echo [1/3] Проверяю зависимости OCR helper...
+if not exist "helper\node_modules\nodemailer\package.json" (
   pushd helper
-  npm install
+  call npm install
+  if errorlevel 1 (
+    popd
+    echo Ошибка npm install. Проверьте интернет и повторите запуск.
+    pause
+    exit /b 1
+  )
   popd
 )
 
-echo [2/2] Запускаю OCR сервер...
-start "Vadim OCR Server" cmd /k "node helper\ocr_helper_server.js"
+echo [2/3] Запускаю OCR сервер...
+start "Strong Bridge OCR Server" cmd /k "cd /d \"%cd%\" && node helper\ocr_helper_server.js"
 
-timeout /t 2 /nobreak >nul
-start "" "%cd%\vadim-filter-tool.html"
+echo [3/3] Жду готовность OCR сервера...
+set /a TRY=0
+:wait_health
+set /a TRY+=1
+powershell -NoProfile -Command "try { $r=Invoke-RestMethod -Uri '%HEALTH_URL%' -TimeoutSec 2; if($r.ok){ exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>nul
+if not errorlevel 1 goto healthy
+if %TRY% GEQ 25 goto health_fail
+timeout /t 1 /nobreak >nul
+goto wait_health
 
+:healthy
+echo OCR сервер готов: %HEALTH_URL%
+start "" "%APP_HTML%"
 echo.
-echo Готово. Окно "Vadim OCR Server" должно оставаться открытым.
-echo Если порт снова занят — используйте STOP_WIN.bat.
+echo Готово. Ничего вручную чистить не нужно — START_WIN делает это сам.
+echo Окно "Strong Bridge OCR Server" не закрывайте во время работы.
 echo.
 endlocal
+exit /b 0
+
+:health_fail
+echo.
+echo Не удалось запустить OCR сервер на %HEALTH_URL%.
+echo Проверьте антивирус/брандмауэр и запустите START_WIN.bat от имени администратора.
+echo.
+pause
+endlocal
+exit /b 1

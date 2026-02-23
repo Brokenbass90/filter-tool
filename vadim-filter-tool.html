@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>vadim-filter-tool (single HTML)</title>
+  <title>Strong Bridge Tool</title>
   <style>
 /* ====== styles.css (original) ====== */
 :root{
@@ -211,6 +211,22 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
   font-size:12px;
 }
 .help-tip.is-on{display:block}
+
+.mail-preview-modal{
+  position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background:rgba(2,6,23,.72); z-index:10000; padding:16px;
+}
+.mail-preview-modal.is-open{display:flex;}
+.mail-preview-dialog{
+  width:min(1100px,96vw); height:min(86vh,900px);
+  background:#0f1120; border:1px solid var(--border); border-radius:14px;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.mail-preview-top{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:10px 12px; border-bottom:1px solid var(--border);
+}
+.mail-preview-frame{width:100%; height:100%; border:0; background:#fff;}
   
 
   /* v11: improve card readability for long text */
@@ -232,8 +248,7 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
       <div class="brand" style="display:flex;gap:10px;align-items:center;">
         <img id="brandTopLogo" alt="logo" style="display:none;height:30px;width:auto;border-radius:6px;border:1px solid rgba(255,255,255,.14);background:#0f172a;padding:2px 6px" />
         <div>
-          <div class="brand__title">vadim-filter-tool</div>
-          <div class="brand__subtitle">ЕИС → импорт → карточки → экспорт (без Python, один HTML)</div>
+          <div class="brand__title">Strong Bridge Tool</div>
         </div>
       </div>
       <nav class="nav">
@@ -380,9 +395,8 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
           <option value="due">Только follow-up к действию</option>
         </select>
         <input class="input" type="number" id="minScoreInput" min="0" max="100" step="5" placeholder="Мин. скоринг" style="max-width:140px" />
-        <select class="select" id="viewSel">
-          <option value="cards">Карточки</option>
-          <option value="table">Таблица</option>
+        <select class="select" id="viewSel" style="display:none;">
+          <option value="table" selected>Таблица</option>
         </select>
         <button class="btn" type="submit">Применить</button>
         <button class="btn btn--ghost" type="button" id="resetBtn">Сброс</button>
@@ -426,7 +440,10 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
         </div>
         <div id="htmlTemplatePreviewWrap" style="display:none;">
           <label class="muted">HTML шаблон письма</label>
-          <textarea id="htmlTemplatePreview" rows="8" style="width:100%; margin-top:6px;" readonly></textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+            <textarea id="htmlTemplateEditor" rows="14" style="width:100%;"></textarea>
+            <iframe id="htmlTemplateLivePreview" title="HTML live preview" style="width:100%;min-height:320px;border:1px solid var(--border);border-radius:12px;background:#fff;"></iframe>
+          </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">
           <button id="sendModeTextBtn" class="btn" type="button">Просто сообщение</button>
@@ -605,6 +622,15 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
   </footer>
 
   <div id="toast" class="toast"></div>
+  <div id="mailPreviewModal" class="mail-preview-modal" aria-hidden="true">
+    <div class="mail-preview-dialog">
+      <div class="mail-preview-top">
+        <div class="muted" id="mailPreviewTitle">Предпросмотр HTML письма</div>
+        <button class="btn btn--ghost btn--mini" type="button" id="mailPreviewCloseBtn">Закрыть</button>
+      </div>
+      <iframe id="mailPreviewFrame" class="mail-preview-frame" title="Mail preview"></iframe>
+    </div>
+  </div>
 
 <script>
 /* ===========================
@@ -614,6 +640,7 @@ const APP = {
   FILTER_KEY: 'sb_filters_v1',
   SEL_KEY: 'sb_selected_ids_v1',
   TEMPLATE_KEY: 'sb_message_template_v1',
+  TEMPLATE_HTML_KEY: 'sb_message_template_html_v1',
   SMTP_KEY: 'sb_smtp_settings_v1',
   QUEUE_POS_KEY: 'sb_queue_pos_v1',
   IMPORT_REPORT_KEY: 'sb_last_import_report_v1',
@@ -758,11 +785,44 @@ function renderContactButtons(s, mini = false) {
   }
   if (s.telegram_username) {
     out.push(`<button class="${cls} btn--tg" type="button" data-tg-msg data-id="${s.id}" title="Открыть Telegram">Telegram</button>`);
+  } else {
+    out.push(`<button class="${cls} btn--tg" type="button" data-tg-search data-id="${s.id}" title="Открыть Telegram и найти контакт">TG поиск</button>`);
   }
   if (s.email) {
     out.push(`<button class="${cls}" type="button" data-mail-msg data-id="${s.id}" title="Открыть Email">Email</button>`);
   }
   return out.join('');
+}
+
+function openMailPreview(s) {
+  const modal = document.getElementById('mailPreviewModal');
+  const frame = document.getElementById('mailPreviewFrame');
+  const title = document.getElementById('mailPreviewTitle');
+  if (!modal || !frame) return;
+  if (title) {
+    title.textContent = `HTML-письмо: ${buildDisplayName(s) || s.company_name || ('ID ' + s.id)}`;
+  }
+  frame.srcdoc = renderTemplate(getEmailHtmlTemplate(), s);
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeMailPreview() {
+  const modal = document.getElementById('mailPreviewModal');
+  const frame = document.getElementById('mailPreviewFrame');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  if (frame) frame.srcdoc = '';
+}
+
+function getEmailHtmlTemplate() {
+  try {
+    const saved = String(localStorage.getItem(APP.TEMPLATE_HTML_KEY) || '').trim();
+    return saved || DEFAULT_EMAIL_HTML_TEMPLATE;
+  } catch (_) {
+    return DEFAULT_EMAIL_HTML_TEMPLATE;
+  }
 }
 
 async function sendBatchViaHelper({ smtp, messages }) {
@@ -2371,7 +2431,7 @@ async function renderCards() {
   const segment = (segmentRaw === 'all') ? '' : segmentRaw;
   const followupDueOnly = (((document.getElementById('followupSel') || {}).value || 'all') === 'due');
   const minScore = Number((document.getElementById('minScoreInput') || {}).value || 0);
-  const view = document.getElementById('viewSel').value;
+  const view = 'table';
 
   const suppliers = await store.query({q, status, segment, minScore, followupDueOnly});
   await renderKpiPanel();
@@ -2398,7 +2458,7 @@ async function renderCards() {
       <table class="table">
         <thead><tr>
           <th>✓</th>
-          <th>Компания</th><th>ИП</th><th>ФИО поставщика</th><th>ФИО руководителя</th><th>Телефон</th><th>Email</th><th>ИНН</th><th>Адрес</th><th>Объект</th><th>Источник</th><th>Сегмент</th><th>Скоринг</th><th>Follow-up</th><th>Статус</th><th>Сообщение</th>
+          <th>Компания</th><th>ИП</th><th>ФИО поставщика</th><th>ФИО руководителя</th><th>Телефон</th><th>Email</th><th>ИНН</th><th>Адрес</th><th style="min-width:320px;">Объект</th><th>Источник</th><th>Сегмент</th><th>Скоринг</th><th>Follow-up</th><th>Статус</th><th>Контакты</th><th>Сообщение</th><th>Письмо</th>
         </tr></thead>
         <tbody></tbody>
       </table>`;
@@ -2415,14 +2475,20 @@ async function renderCards() {
         <td>${escapeHtml(s.email)}</td>
         <td>${escapeHtml(s.inn)}</td>
         <td>${escapeHtml(s.address)}</td>
-        <td><div class="cell-scroll">${escapeHtml(s.purchase_object_name||'')}</div></td>
+        <td style="min-width:320px;"><div class="cell-scroll">${escapeHtml(s.purchase_object_name||'')}</div></td>
         <td>${escapeHtml(s.source_file||'')}</td>
         <td>${escapeHtml(s.segment||'')}</td>
         <td>${escapeHtml(s.lead_score||0)}</td>
         <td>${escapeHtml((s.followup_at||'').slice(0,10))}</td>
         <td>${escapeHtml(s.status||'')}</td>
         <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">${renderContactButtons(s, true) || '<span class="muted">—</span>'}</div>
+        </td>
+        <td>
           <button class="btn btn--ghost" type="button" data-copy-msg="1" data-id="${s.id}" style="padding:6px 10px;border-radius:10px">Copy</button>
+        </td>
+        <td>
+          <button class="btn btn--ghost" type="button" data-preview-mail="1" data-id="${s.id}" style="padding:6px 10px;border-radius:10px">HTML</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -2448,6 +2514,7 @@ async function renderCards() {
             ${s.status === 'new' ? '<span class="badge">new</span>' : ''}
             ${renderContactButtons(s, true)}
             <button class="btn btn--ghost btn--mini" type="button" data-copy-msg data-id="${s.id}" title="Скопировать текст сообщения">Copy</button>
+            <button class="btn btn--ghost btn--mini" type="button" data-preview-mail data-id="${s.id}" title="Предпросмотр HTML-письма">HTML</button>
             <button class="btn btn--ghost btn--mini" type="button" data-toggle-details data-id="${s.id}">Подробнее</button>
             <button class="btn btn--danger btn--mini" type="button" data-delete-one="${s.id}">Удалить</button>
           </div>
@@ -3136,10 +3203,7 @@ function bindCards() {
     const d = normalizePhoneForWhatsApp(s.phone_e164);
     if (!d) { toast('Нет телефона для WhatsApp'); return; }
     const text = encodeURIComponent(msg);
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-    const url = isMobile
-      ? `https://wa.me/${d}?text=${text}`
-      : `https://web.whatsapp.com/send?phone=${d}&text=${text}`;
+    const url = `https://wa.me/${d}?text=${text}`;
     window.open(url, '_blank', 'noopener');
   });
 
@@ -3167,6 +3231,24 @@ function bindCards() {
   });
 
   document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-tg-search]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const s = (await store.getByIds([id]))[0];
+    if (!s) return;
+    const query = [
+      String(s.director_fio || '').trim(),
+      String(s.company_name || '').trim(),
+      String(s.phone_e164 || '').trim(),
+      String(s.email || '').trim(),
+    ].filter(Boolean).join(' | ');
+    const ok = await copyText(query);
+    if (ok) toast('Поисковая строка скопирована — вставь в поиск Telegram');
+    window.open('https://web.telegram.org/', '_blank', 'noopener');
+  });
+
+  document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-mail-msg]');
     if (!btn) return;
     const id = Number(btn.getAttribute('data-id'));
@@ -3177,6 +3259,30 @@ function bindCards() {
     const subject = renderTemplate(getSavedSmtpSubjectTemplate(), s);
     const url = `mailto:${encodeURIComponent(String(s.email || '').trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msg)}`;
     window.open(url, '_blank', 'noopener');
+  });
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-preview-mail]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const s = (await store.getByIds([id]))[0];
+    if (!s) return;
+    openMailPreview(s);
+  });
+
+  const mailPreviewCloseBtn = document.getElementById('mailPreviewCloseBtn');
+  const mailPreviewModal = document.getElementById('mailPreviewModal');
+  if (mailPreviewCloseBtn) {
+    mailPreviewCloseBtn.addEventListener('click', closeMailPreview);
+  }
+  if (mailPreviewModal) {
+    mailPreviewModal.addEventListener('click', (e) => {
+      if (e.target === mailPreviewModal) closeMailPreview();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMailPreview();
   });
 
   document.addEventListener('click', (e) => {
@@ -3230,7 +3336,8 @@ function bindMessage() {
   const sendModeHtmlBtn = document.getElementById('sendModeHtmlBtn');
   const sendModeHint = document.getElementById('sendModeHint');
   const htmlTemplatePreviewWrap = document.getElementById('htmlTemplatePreviewWrap');
-  const htmlTemplatePreview = document.getElementById('htmlTemplatePreview');
+  const htmlTemplateEditor = document.getElementById('htmlTemplateEditor');
+  const htmlTemplateLivePreview = document.getElementById('htmlTemplateLivePreview');
   const sendEmailSelectedBtn = document.getElementById('sendEmailSelectedBtn');
   const smtpUser = document.getElementById('smtpUser');
   const smtpPass = document.getElementById('smtpPass');
@@ -3244,6 +3351,9 @@ function bindMessage() {
   const emailLimitHint = document.getElementById('emailLimitHint');
   const saved = localStorage.getItem(APP.TEMPLATE_KEY);
   ta.value = normalizeTemplateText(saved || DEFAULT_TEMPLATE);
+  if (htmlTemplateEditor) {
+    htmlTemplateEditor.value = getEmailHtmlTemplate();
+  }
 
   try {
     const smtpSaved = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
@@ -3266,13 +3376,18 @@ function bindMessage() {
   let sendMode = (localStorage.getItem(APP.SEND_MODE_KEY) || 'text').trim();
   if (sendMode !== 'html') sendMode = 'text';
 
+  function renderHtmlLivePreview() {
+    if (!htmlTemplateLivePreview) return;
+    htmlTemplateLivePreview.srcdoc = String((htmlTemplateEditor && htmlTemplateEditor.value) || DEFAULT_EMAIL_HTML_TEMPLATE);
+  }
+
   function renderSendModeUi() {
     if (sendModeTextBtn) sendModeTextBtn.className = sendMode === 'text' ? 'btn' : 'btn btn--ghost';
     if (sendModeHtmlBtn) sendModeHtmlBtn.className = sendMode === 'html' ? 'btn' : 'btn btn--ghost';
     if (sendModeHint) sendModeHint.textContent = sendMode === 'html' ? 'Режим: HTML письмо' : 'Режим: сообщение';
     if (textTemplateWrap) textTemplateWrap.style.display = sendMode === 'html' ? 'none' : '';
     if (htmlTemplatePreviewWrap) htmlTemplatePreviewWrap.style.display = sendMode === 'html' ? '' : 'none';
-    if (htmlTemplatePreview) htmlTemplatePreview.value = sendMode === 'html' ? DEFAULT_EMAIL_HTML_TEMPLATE : '';
+    if (sendMode === 'html') renderHtmlLivePreview();
     if (sendEmailSelectedBtn) {
       sendEmailSelectedBtn.textContent = sendMode === 'html'
         ? 'Отправить письмо'
@@ -3288,6 +3403,11 @@ function bindMessage() {
 
   if (sendModeTextBtn) sendModeTextBtn.addEventListener('click', () => setSendMode('text'));
   if (sendModeHtmlBtn) sendModeHtmlBtn.addEventListener('click', () => setSendMode('html'));
+  if (htmlTemplateEditor) {
+    htmlTemplateEditor.addEventListener('input', () => {
+      renderHtmlLivePreview();
+    });
+  }
   renderSendModeUi();
 
   function getSmtpSettings() {
@@ -3391,6 +3511,11 @@ function bindMessage() {
   document.getElementById('saveTemplateBtn').addEventListener('click', () => {
     localStorage.setItem(APP.TEMPLATE_KEY, normalizeTemplateText(ta.value || ''));
     ta.value = normalizeTemplateText(ta.value || '');
+    if (htmlTemplateEditor) {
+      localStorage.setItem(APP.TEMPLATE_HTML_KEY, String(htmlTemplateEditor.value || '').trim() || DEFAULT_EMAIL_HTML_TEMPLATE);
+      htmlTemplateEditor.value = String(localStorage.getItem(APP.TEMPLATE_HTML_KEY) || DEFAULT_EMAIL_HTML_TEMPLATE);
+      renderHtmlLivePreview();
+    }
     saveSmtpSettings();
     updateSelectedCountMsg();
     toast('Сохранено');
@@ -3454,7 +3579,7 @@ function bindMessage() {
 
       const suppliers = await store.getByIds(ids);
       const tpl = normalizeTemplateText(ta.value || '');
-      const tplHtml = DEFAULT_EMAIL_HTML_TEMPLATE;
+      const tplHtml = getEmailHtmlTemplate();
       const subjectTpl = smtp.subjectTpl || 'Предложение по поставкам из Китая — {company_name}';
       const useHtml = sendMode === 'html';
       const messages = suppliers
@@ -3628,7 +3753,7 @@ function bindCampaigns() {
     if (!smtp.user || !smtp.pass) throw new Error('Заполните SMTP в вкладке "Сообщение"');
 
     const template = normalizeTemplateText(localStorage.getItem(APP.TEMPLATE_KEY) || DEFAULT_TEMPLATE);
-    const tplHtml = DEFAULT_EMAIL_HTML_TEMPLATE;
+    const tplHtml = getEmailHtmlTemplate();
     const useHtml = String(localStorage.getItem(APP.SEND_MODE_KEY) || 'text') === 'html';
 
     let suppliers = [];
