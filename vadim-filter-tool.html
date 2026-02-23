@@ -191,6 +191,26 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
   transition: opacity .15s ease, transform .15s ease;
 }
 .toast.is-on{opacity:1;transform: translateY(0);}
+
+.help-btn{
+  border:1px solid var(--line);
+  color:var(--muted);
+  background:transparent;
+  width:22px;height:22px;border-radius:999px;
+  font-size:12px;font-weight:800;line-height:1;cursor:pointer;
+}
+.help-btn:hover{color:var(--text);border-color:var(--accent)}
+.help-tip{
+  display:none;
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid rgba(110,231,255,.25);
+  border-radius:10px;
+  background:rgba(110,231,255,.06);
+  color:var(--muted);
+  font-size:12px;
+}
+.help-tip.is-on{display:block}
   
 
   /* v11: improve card readability for long text */
@@ -209,15 +229,19 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
 <body>
   <header class="topbar">
     <div class="container topbar__inner">
-      <div class="brand">
-        <div class="brand__title">vadim-filter-tool</div>
-        <div class="brand__subtitle">ЕИС → импорт → карточки → экспорт (без Python, один HTML)</div>
+      <div class="brand" style="display:flex;gap:10px;align-items:center;">
+        <img id="brandTopLogo" alt="logo" style="display:none;height:30px;width:auto;border-radius:6px;border:1px solid rgba(255,255,255,.14);background:#0f172a;padding:2px 6px" />
+        <div>
+          <div class="brand__title">vadim-filter-tool</div>
+          <div class="brand__subtitle">ЕИС → импорт → карточки → экспорт (без Python, один HTML)</div>
+        </div>
       </div>
       <nav class="nav">
         <a href="#cards" data-nav="cards">Карточки</a>
         <a href="#import" data-nav="import">Импорт</a>
         <a href="#message" data-nav="message">Сообщение</a>
         <a href="#queue" data-nav="queue">Очередь</a>
+        <a href="#campaigns" data-nav="campaigns">Кампании</a>
         <span class="nav__sep">•</span>
         <a href="#" id="downloadAllExcel">Скачать Excel</a>
         <a href="#" id="downloadAllCsv">Скачать CSV</a>
@@ -235,7 +259,11 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
 
     <!-- IMPORT -->
     <section id="page-import" class="page panel">
-      <h1 class="h1">Импорт файлов (.html или .zip)</h1>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <h1 class="h1" style="margin:0">Импорт файлов (.html или .zip)</h1>
+        <button class="help-btn" type="button" data-help-target="help-import">?</button>
+      </div>
+      <div id="help-import" class="help-tip">Загрузите .html/.zip/.pdf, затем нажмите «Импортировать». Для сканов PDF включите OCR и дождитесь статуса завершения.</div>
       <p class="muted">Перетащите файлы сюда или выберите их кнопкой. Можно загрузить ZIP-архив с множеством HTML или PDF (экспериментально).</p>
 
       <div class="upload">
@@ -318,21 +346,40 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
     <!-- CARDS -->
     <section id="page-cards" class="page">
       <form class="filters panel" id="filtersForm">
+        <button class="help-btn" type="button" data-help-target="help-cards">?</button>
+        <div id="help-cards" class="help-tip" style="width:100%;">Фильтры применяются кнопкой «Применить». Скоринг и сегменты помогают быстро отобрать приоритетных лидов.</div>
         <input class="input" type="text" id="qInput" placeholder="Поиск: компания, ФИО, телефон, почта, ИНН, адрес" />
         <select class="select" id="statusSel">
           <option value="all">Все статусы</option>
-          <option value="new">Только new</option>
-          <option value="sent">Только sent</option>
-          <option value="interested">Только interested</option>
-          <option value="not_relevant">Только not_relevant</option>
-          <option value="no_answer">Только no_answer</option>
-          <option value="followup_3d">Только followup_3d</option>
-          <option value="ok">Только ok</option>
-          <option value="queued">Только queued</option>
-          <option value="contacted">Только contacted</option>
-          <option value="replied">Только replied</option>
-          <option value="ignore">Только ignore</option>
+          <option value="new">new</option>
+          <option value="sent">sent</option>
+          <option value="replied">replied</option>
+          <option value="interested">interested</option>
+          <option value="call_scheduled">call_scheduled</option>
+          <option value="won">won</option>
+          <option value="lost">lost</option>
+          <option value="followup_3d">followup_3d</option>
+          <option value="followup_7d">followup_7d</option>
+          <option value="contacted">contacted</option>
+          <option value="not_relevant">not_relevant</option>
+          <option value="no_answer">no_answer</option>
+          <option value="queued">queued</option>
+          <option value="ignore">ignore</option>
+          <option value="ok">ok</option>
         </select>
+        <select class="select" id="segmentSel">
+          <option value="all">Все сегменты</option>
+          <option value="construction">Стройка/Инфраструктура</option>
+          <option value="industry">Промышленность</option>
+          <option value="logistics">Логистика/Транспорт</option>
+          <option value="trade">Торговля</option>
+          <option value="other">Другое</option>
+        </select>
+        <select class="select" id="followupSel">
+          <option value="all">Все задачи</option>
+          <option value="due">Только follow-up к действию</option>
+        </select>
+        <input class="input" type="number" id="minScoreInput" min="0" max="100" step="5" placeholder="Мин. скоринг" style="max-width:140px" />
         <select class="select" id="viewSel">
           <option value="cards">Карточки</option>
           <option value="table">Таблица</option>
@@ -349,25 +396,43 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
         <button class="btn btn--ghost" type="button" id="exportSelectedCsv">Экспорт выбранных CSV</button>
       </form>
 
+      <div class="panel" id="kpiPanel" style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+        <div class="panel panel--note"><div class="muted">Новых</div><div id="kpiNew" style="font-weight:800;font-size:22px">0</div></div>
+        <div class="panel panel--note"><div class="muted">Отправлено</div><div id="kpiSent" style="font-weight:800;font-size:22px">0</div></div>
+        <div class="panel panel--note"><div class="muted">Ответили</div><div id="kpiReplied" style="font-weight:800;font-size:22px">0</div></div>
+        <div class="panel panel--note"><div class="muted">Заинтересованы</div><div id="kpiInterested" style="font-weight:800;font-size:22px">0</div></div>
+        <div class="panel panel--note"><div class="muted">Конверсия в ответ</div><div id="kpiReplyRate" style="font-weight:800;font-size:22px">0%</div></div>
+        <div class="panel panel--note"><div class="muted">Конверсия в интерес</div><div id="kpiInterestRate" style="font-weight:800;font-size:22px">0%</div></div>
+      </div>
+
       <div id="cardsWrap"></div>
     </section>
 
     <!-- MESSAGE -->
     <section id="page-message" class="page">
       <div class="panel" style="max-width:980px">
-        <h2 style="margin-top:0">Сообщение</h2>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <h2 style="margin:0">Сообщение</h2>
+        <button class="help-btn" type="button" data-help-target="help-message">?</button>
+      </div>
+      <div id="help-message" class="help-tip">Сохраните текст сообщения. Режим отправки выбирается кнопками: «Просто сообщение» или «HTML письмо».</div>
         <div class="muted" style="margin-bottom: 10px;">
           Шаблон хранится локально (localStorage). Используйте плейсхолдеры ниже — кликом они копируются в буфер.
         </div>
 
-        <label class="muted">Текст сообщения</label>
-        <textarea id="msgTemplate" rows="8" style="width:100%; margin-top:6px;"></textarea>
-        <label class="muted" style="display:block; margin-top:10px;">HTML шаблон письма (опционально)</label>
-        <textarea id="msgTemplateHtml" rows="8" style="width:100%; margin-top:6px;" placeholder="<html><body><h3>Здравствуйте, {company_name}</h3><p>...</p></body></html>"></textarea>
-        <label class="check" style="margin-top:8px;">
-          <input type="checkbox" id="sendAsHtml" />
-          <span>Отправлять как HTML (если заполнен HTML шаблон)</span>
-        </label>
+        <div id="textTemplateWrap">
+          <label class="muted">Текст сообщения</label>
+          <textarea id="msgTemplate" rows="8" style="width:100%; margin-top:6px;"></textarea>
+        </div>
+        <div id="htmlTemplatePreviewWrap" style="display:none;">
+          <label class="muted">HTML шаблон письма</label>
+          <textarea id="htmlTemplatePreview" rows="8" style="width:100%; margin-top:6px;" readonly></textarea>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">
+          <button id="sendModeTextBtn" class="btn" type="button">Просто сообщение</button>
+          <button id="sendModeHtmlBtn" class="btn btn--ghost" type="button">HTML письмо</button>
+          <span id="sendModeHint" class="muted" style="font-size:12px">Режим: сообщение</span>
+        </div>
 
         <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;">
           <button id="saveTemplateBtn" class="btn" type="button">Сохранить</button>
@@ -379,15 +444,23 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
         </div>
 
         <div class="panel panel--note" style="margin-top:12px">
-          <div class="muted" style="margin-bottom:8px">Настройки Email (Gmail SMTP + App Password)</div>
-          <div style="display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:8px;">
-            <input id="smtpUser" class="input" placeholder="Gmail логин (example@gmail.com)" />
-            <input id="smtpPass" class="input" type="password" placeholder="App Password (16 символов)" />
-            <input id="smtpFromName" class="input" placeholder="Имя отправителя (опционально)" />
-            <input id="smtpSubjectTpl" class="input" placeholder="Тема письма с плейсхолдерами" />
-            <input id="smtpDailyLimit" class="input" type="number" min="1" max="500" value="250" placeholder="Лимит в день" />
-            <input id="smtpDelayMs" class="input" type="number" min="0" max="10000" value="1200" placeholder="Пауза между письмами (мс)" />
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <div class="muted">Настройки Email (Gmail SMTP + App Password)</div>
+            <button class="help-btn" type="button" data-help-target="help-smtp">?</button>
           </div>
+          <div id="help-smtp" class="help-tip">Логин и App Password должны быть от одного Gmail. Партия — сколько писем уйдёт за один запуск. Окно отправки ограничивает часы работы.</div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:8px;">
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Gmail логин</div><input id="smtpUser" class="input" placeholder="example@gmail.com" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">App Password</div><input id="smtpPass" class="input" type="password" placeholder="16 символов" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Имя отправителя</div><input id="smtpFromName" class="input" placeholder="Николай" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Тема письма</div><input id="smtpSubjectTpl" class="input" placeholder="С плейсхолдерами" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Лимит в день</div><input id="smtpDailyLimit" class="input" type="number" min="1" max="500" value="250" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Пауза между письмами (мс)</div><input id="smtpDelayMs" class="input" type="number" min="0" max="10000" value="1200" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Размер партии</div><input id="smtpBatchSize" class="input" type="number" min="1" max="500" value="50" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Окно отправки: с (час)</div><input id="smtpWindowStart" class="input" type="number" min="0" max="23" value="9" /></div>
+            <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Окно отправки: до (час)</div><input id="smtpWindowEnd" class="input" type="number" min="0" max="23" value="20" /></div>
+          </div>
+          <div class="muted" style="margin-top:8px">A/B темы: укажите варианты через <b>||</b>, например: Вариант A || Вариант B</div>
           <div class="muted" id="emailLimitHint" style="margin-top:8px"></div>
         </div>
       </div>
@@ -412,10 +485,60 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
       </div>
     </section>
 
+    <!-- CAMPAIGNS -->
+    <section id="page-campaigns" class="page">
+      <div class="panel" style="max-width:980px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h2 style="margin:0">Кампании</h2>
+          <button class="help-btn" type="button" data-help-target="help-campaigns">?</button>
+        </div>
+        <div id="help-campaigns" class="help-tip">Авто-кампания отправляет выбранным карточкам партиями по расписанию. Suppression-list исключает адреса/домены. Retry failed повторяет только неудачные отправки.</div>
+        <div class="muted" style="margin-bottom:10px;">Управление пакетной рассылкой, suppression-list и журналом отправок.</div>
+
+        <div class="panel panel--note" style="margin-bottom:10px;">
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:8px;">
+            <input id="campIntervalMin" class="input" type="number" min="1" max="240" value="15" placeholder="Интервал запуска (мин)" />
+            <input id="campBatchSize" class="input" type="number" min="1" max="500" value="25" placeholder="Писем за запуск" />
+            <input id="campWindowStart" class="input" type="number" min="0" max="23" value="9" placeholder="Окно: с (час)" />
+            <input id="campWindowEnd" class="input" type="number" min="0" max="23" value="20" placeholder="Окно: до (час)" />
+            <input id="campCooldownHours" class="input" type="number" min="0" max="720" value="48" placeholder="Cooldown по домену (часы)" />
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+            <button id="saveCampaignBtn" class="btn" type="button">Сохранить настройки</button>
+            <button id="runCampaignNowBtn" class="btn btn--ghost" type="button">Запустить 1 партию сейчас</button>
+            <button id="startCampaignBtn" class="btn btn--ghost" type="button">Старт авто-кампании</button>
+            <button id="stopCampaignBtn" class="btn btn--danger" type="button">Стоп авто-кампании</button>
+            <button id="retryFailedBtn" class="btn btn--ghost" type="button">Повторить failed</button>
+          </div>
+          <div id="campaignStatus" class="muted" style="margin-top:8px">Кампания не запущена.</div>
+        </div>
+
+        <div class="panel panel--note" style="margin-bottom:10px;">
+          <div class="muted" style="margin-bottom:6px;">Suppression list (email или домен, по одному в строке: bad@x.com или @x.com)</div>
+          <textarea id="suppressionList" rows="5" style="width:100%;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button id="saveSuppressionBtn" class="btn btn--ghost" type="button">Сохранить suppression</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h3 style="margin:0">Журнал рассылки</h3>
+            <button id="refreshJournalBtn" class="btn btn--ghost" type="button">Обновить журнал</button>
+          </div>
+          <div id="campaignJournal" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- QUEUE -->
     <section id="page-queue" class="page">
       <div class="panel" style="max-width:980px">
-        <h2 style="margin-top:0">Очередь</h2>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <h2 style="margin:0">Очередь</h2>
+        <button class="help-btn" type="button" data-help-target="help-queue">?</button>
+      </div>
+      <div id="help-queue" class="help-tip">Очередь показывает выбранные карточки по одной: копируйте сообщение и сразу меняйте статус кнопками.</div>
         <div class="muted" style="margin-bottom: 10px;">
           Очередь берёт выбранные карточки (галочки на вкладке “Карточки”) и показывает их по одной.
           Шаблон сообщения берётся из вкладки “Сообщение”.
@@ -455,9 +578,12 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
           <div style="display:flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
             <button class="btn" type="button" data-set-status="sent">Отправлено</button>
             <button class="btn" type="button" data-set-status="interested">Заинтересован</button>
+            <button class="btn" type="button" data-set-status="replied">Ответил</button>
+            <button class="btn" type="button" data-set-status="call_scheduled">Назначен звонок</button>
             <button class="btn" type="button" data-set-status="not_relevant">Не актуально</button>
             <button class="btn" type="button" data-set-status="no_answer">Нет ответа</button>
             <button class="btn" type="button" data-set-status="followup_3d">Повторить через 3 дня</button>
+            <button class="btn" type="button" data-set-status="followup_7d">Повторить через 7 дней</button>
             <button class="btn btn--danger" type="button" id="clearQueuePos">Сбросить позицию очереди</button>
           </div>
 
@@ -488,15 +614,150 @@ const APP = {
   FILTER_KEY: 'sb_filters_v1',
   SEL_KEY: 'sb_selected_ids_v1',
   TEMPLATE_KEY: 'sb_message_template_v1',
-  TEMPLATE_HTML_KEY: 'sb_message_template_html_v1',
   SMTP_KEY: 'sb_smtp_settings_v1',
   QUEUE_POS_KEY: 'sb_queue_pos_v1',
   IMPORT_REPORT_KEY: 'sb_last_import_report_v1',
+  EMAIL_LOG_KEY: 'sb_email_send_log_v1',
+  CAMPAIGN_KEY: 'sb_campaign_settings_v1',
+  SUPPRESSION_KEY: 'sb_suppression_list_v1',
+  SEND_MODE_KEY: 'sb_send_mode_v1',
   DB_EXPORT_VERSION: 1,
 };
 
-const STATUS_LIST = ['new','sent','interested','not_relevant','no_answer','followup_3d','queued','contacted','replied','ignore','ok'];
+const STATUS_LIST = [
+  'new','queued','contacted','sent','replied','interested','call_scheduled','won','lost',
+  'followup_3d','followup_7d','not_relevant','no_answer','ignore','ok'
+];
 const MAX_PAGES = 25;
+const BRAND_LOGO_URL = 'https://raw.githubusercontent.com/Brokenbass90/filter-tool/main/assets/strong-bridge-logo.png';
+
+function daysFromNow(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + Number(days || 0));
+  return d.toISOString();
+}
+
+function segmentSupplier(s) {
+  const txt = [s.purchase_object_name, s.company_name, s.address, s.source_file].join(' ').toLowerCase();
+  if (/(строй|труб|тепло|дорог|инфра|подряд|контракт)/.test(txt)) return 'construction';
+  if (/(завод|пром|металл|оборуд|станок|производ)/.test(txt)) return 'industry';
+  if (/(логист|транспорт|достав|перевоз|склад)/.test(txt)) return 'logistics';
+  if (/(торг|ритейл|магазин|опт)/.test(txt)) return 'trade';
+  return 'other';
+}
+
+function calcLeadScore(s) {
+  let score = 0;
+  if (s.email) score += 25;
+  if (s.phone_e164) score += 25;
+  if (s.inn) score += 20;
+  if (s.address) score += 10;
+  if (s.purchase_object_name) score += 10;
+  if (s.director_fio) score += 10;
+  const ageDays = s.extracted_at ? Math.max(0, (Date.now() - new Date(s.extracted_at).getTime()) / (1000 * 60 * 60 * 24)) : 999;
+  if (ageDays <= 30) score += 5;
+  if (ageDays <= 7) score += 5;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function enrichSupplier(raw) {
+  const s = { ...(raw || {}) };
+  s.segment = segmentSupplier(s);
+  s.lead_score = calcLeadScore(s);
+  if (!s.created_at) s.created_at = s.extracted_at || new Date().toISOString();
+  if (!s.status) s.status = 'new';
+  return s;
+}
+
+function loadEmailLog() {
+  try { return JSON.parse(localStorage.getItem(APP.EMAIL_LOG_KEY) || '[]') || []; }
+  catch (_) { return []; }
+}
+
+function appendEmailLog(entries) {
+  const log = loadEmailLog();
+  const out = log.concat(entries || []).slice(-10000);
+  localStorage.setItem(APP.EMAIL_LOG_KEY, JSON.stringify(out));
+}
+
+function loadCampaignSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(APP.CAMPAIGN_KEY) || '{}') || {};
+    return {
+      intervalMin: Number(s.intervalMin || 15),
+      batchSize: Number(s.batchSize || 25),
+      windowStart: Number.isFinite(Number(s.windowStart)) ? Number(s.windowStart) : 9,
+      windowEnd: Number.isFinite(Number(s.windowEnd)) ? Number(s.windowEnd) : 20,
+      cooldownHours: Number(s.cooldownHours || 48),
+      active: !!s.active,
+      lastRunAt: String(s.lastRunAt || '')
+    };
+  } catch (_) {
+    return { intervalMin: 15, batchSize: 25, windowStart: 9, windowEnd: 20, cooldownHours: 48, active: false, lastRunAt: '' };
+  }
+}
+
+function saveCampaignSettings(s) {
+  localStorage.setItem(APP.CAMPAIGN_KEY, JSON.stringify(s || {}));
+}
+
+function loadSuppressionSet() {
+  try {
+    const txt = String(localStorage.getItem(APP.SUPPRESSION_KEY) || '');
+    const lines = txt.split(/\r?\n/).map(x => x.trim().toLowerCase()).filter(Boolean);
+    return new Set(lines);
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function emailDomain(email) {
+  const e = String(email || '').trim().toLowerCase();
+  const i = e.lastIndexOf('@');
+  return i >= 0 ? e.slice(i + 1) : '';
+}
+
+function isSuppressedEmail(email, supSet) {
+  const e = String(email || '').trim().toLowerCase();
+  if (!e) return true;
+  if (supSet.has(e)) return true;
+  const d = emailDomain(e);
+  if (!d) return true;
+  if (supSet.has('@' + d) || supSet.has(d)) return true;
+  return false;
+}
+
+function chooseSubjectVariant(subjectTpl, supplier) {
+  const parts = String(subjectTpl || '').split('||').map(x => x.trim()).filter(Boolean);
+  if (parts.length <= 1) return subjectTpl;
+  const seed = Number((supplier && supplier.id) || 0);
+  const idx = Math.abs(seed) % parts.length;
+  return parts[idx];
+}
+
+async function sendBatchViaHelper({ smtp, messages }) {
+  const base = ocrHelperBase();
+  const r = await fetch(base + '/email/send-batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      smtp: {
+        user: smtp.user,
+        pass: smtp.pass,
+        fromName: smtp.fromName,
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: 'tls'
+      },
+      dailyLimit: Number(smtp.dailyLimit || 250),
+      delayMs: Number(smtp.delayMs || 1200),
+      messages
+    })
+  });
+  const j = await r.json();
+  if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'email_send_failed');
+  return j;
+}
 
 const DEFAULT_TEMPLATE = `Здравствуйте! Мы занимаемся поставками из Китая под заказ (поиск, проверка, закупка, доставка).
 
@@ -509,6 +770,61 @@ const DEFAULT_TEMPLATE = `Здравствуйте! Мы занимаемся п
 Email: {email}
 
 Если да — что именно нужно и куда доставлять (город/страна)?`;
+
+
+const DEFAULT_EMAIL_HTML_TEMPLATE = `<html><body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,sans-serif;color:#0e1b2c;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6ecf5;">
+          <tr>
+            <td style="padding:18px 22px;background:#0f172a;color:#ffffff;">
+              <img src="cid:brandlogo@sb" alt="Strong Bridge" width="160" style="width:160px;max-width:100%;height:auto;display:block;margin-bottom:10px;" />
+              <div style="font-size:20px;font-weight:700;line-height:1.3;">Поставки из Китая под ваш проект</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px;line-height:1.6;font-size:15px;">
+              <p style="margin:0 0 12px 0;">Здравствуйте, <b>{company_name}</b>!</p>
+              <p style="margin:0 0 12px 0;">Мы помогаем бизнесу с поставками из Китая: поиск завода, проверка, закупка, логистика и контроль поставки.</p>
+              <p style="margin:0 0 14px 0;">Подскажите, актуальны ли для вас поставки в ближайший месяц?</p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:14px;background:#f8fbff;border:1px solid #dbe7f5;border-radius:10px;">
+                <tr><td style="padding:8px 12px;width:170px;color:#5b6b84;">Компания</td><td style="padding:8px 12px;"><b>{company_name}</b></td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Контакт</td><td style="padding:8px 12px;">{director_fio}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Телефон</td><td style="padding:8px 12px;">{phone}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Email</td><td style="padding:8px 12px;">{email}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">ИНН</td><td style="padding:8px 12px;">{inn}</td></tr>
+              </table>
+              <p style="margin:16px 0 8px 0;">Если удобно, ответьте на 3 вопроса:</p>
+              <ol style="margin:0 0 16px 18px;padding:0;">
+                <li>Какие товары интересуют?</li>
+                <li>Какие объемы/частота поставок?</li>
+                <li>Куда доставлять (город/страна)?</li>
+              </ol>
+              <p style="margin:0;">С уважением,<br><b>Strong Bridge</b></p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:14px;">
+                <tr>
+                  <td style="padding-right:8px;">
+                    <a href="https://wa.me/00000000000" style="display:inline-block;padding:6px 10px;border:1px solid #dbe7f5;border-radius:999px;color:#0e1b2c;text-decoration:none;font-size:12px;">WhatsApp</a>
+                  </td>
+                  <td style="padding-right:8px;">
+                    <a href="https://t.me/yourname" style="display:inline-block;padding:6px 10px;border:1px solid #dbe7f5;border-radius:999px;color:#0e1b2c;text-decoration:none;font-size:12px;">Telegram</a>
+                  </td>
+                  <td style="padding-right:8px;">
+                    <a href="https://instagram.com/yourname" style="display:inline-block;padding:6px 10px;border:1px solid #dbe7f5;border-radius:999px;color:#0e1b2c;text-decoration:none;font-size:12px;">Instagram</a>
+                  </td>
+                  <td>
+                    <a href="https://vk.com/yourname" style="display:inline-block;padding:6px 10px;border:1px solid #dbe7f5;border-radius:999px;color:#0e1b2c;text-decoration:none;font-size:12px;">VK</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body></html>`;
 
 /* ===========================
    Small UI helpers
@@ -528,6 +844,18 @@ function toast(msg) {
   el.classList.add('is-on');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('is-on'), 1200);
+}
+
+function applyTopLogoFromUrl() {
+  const el = document.getElementById('brandTopLogo');
+  if (!el) return;
+  if (!BRAND_LOGO_URL) {
+    el.removeAttribute('src');
+    el.style.display = 'none';
+    return;
+  }
+  el.src = BRAND_LOGO_URL;
+  el.style.display = 'block';
 }
 
 async function copyText(text) {
@@ -625,15 +953,25 @@ class SupplierStore {
     return all.filter(x => set.has(Number(x.id)));
   }
 
-  async query({q='', status=''}) {
-    const all = await this.getAll();
+  async query({q='', status='', segment='', minScore=0, followupDueOnly=false}) {
+    const all = (await this.getAll()).map(enrichSupplier);
     const qq = (q || '').trim().toLowerCase();
     const st = (status || '').trim();
+    const seg = (segment || '').trim();
+    const minSc = Number(minScore || 0);
+    const now = Date.now();
     return all
       .filter(s => {
         if (st && s.status !== st) return false;
+        if (seg && s.segment !== seg) return false;
+        if (Number.isFinite(minSc) && minSc > 0 && Number(s.lead_score || 0) < minSc) return false;
+        if (followupDueOnly) {
+          if (!s.followup_at) return false;
+          const due = new Date(s.followup_at).getTime();
+          if (!Number.isFinite(due) || due > now) return false;
+        }
         if (!qq) return true;
-        const blob = [s.company_name, s.director_fio, s.phone_e164, s.email, s.inn, s.address, s.source_file].join(' ').toLowerCase();
+        const blob = [s.company_name, s.director_fio, s.phone_e164, s.email, s.inn, s.address, s.source_file, s.segment, s.purchase_object_name].join(' ').toLowerCase();
         return blob.includes(qq);
       })
       .sort((a,b) => String(b.extracted_at||'').localeCompare(String(a.extracted_at||'')));
@@ -648,7 +986,8 @@ class SupplierStore {
       for (const s of suppliers) {
         const byInn = s.inn ? all.find(x => x.inn === s.inn) : null;
         const byPhone = s.phone_e164 ? all.find(x => x.phone_e164 === s.phone_e164) : null;
-        const existing = byInn || byPhone;
+        const byEmail = s.email ? all.find(x => String(x.email||'').toLowerCase() === String(s.email||'').toLowerCase()) : null;
+        const existing = byInn || byPhone || byEmail;
         if (existing) {
           existing.company_name = s.company_name;
           existing.director_fio = s.director_fio;
@@ -659,10 +998,12 @@ class SupplierStore {
           existing.purchase_object_name = s.purchase_object_name || '';
           existing.source_file = s.source_file;
           existing.extracted_at = this._nowIso();
+          const enrichedExisting = enrichSupplier(existing);
+          Object.assign(existing, enrichedExisting);
           updated += 1;
         } else {
           const id = (Math.max(0, ...all.map(x => Number(x.id)||0)) + 1);
-          all.push({ id, ...s, extracted_at: this._nowIso(), status: 'new', notes: '' });
+          all.push(enrichSupplier({ id, ...s, extracted_at: this._nowIso(), status: 'new', notes: '' }));
           inserted += 1;
         }
       }
@@ -683,7 +1024,7 @@ class SupplierStore {
         const s2 = { ...s };
         if (!s2.phone_e164) delete s2.phone_e164;
         if (!s2.inn) delete s2.inn;
-        const existing = await new Promise((resolve) => {
+        let existing = await new Promise((resolve) => {
           if (!s2.inn) return resolve(null);
           const r1 = innIndex.get(s2.inn);
           r1.onsuccess = () => resolve(r1.result || null);
@@ -695,9 +1036,19 @@ class SupplierStore {
           r2.onerror = () => resolve(null);
         });
 
+        if (!existing && s2.email) {
+          const allRows = await new Promise((resolve) => {
+            const rAll = store.getAll();
+            rAll.onsuccess = () => resolve(rAll.result || []);
+            rAll.onerror = () => resolve([]);
+          });
+          const em = String(s2.email || '').toLowerCase();
+          existing = allRows.find(x => String(x && x.email || '').toLowerCase() === em) || null;
+        }
+
         if (existing) {
-          const keep = { status: existing.status || 'new', notes: existing.notes || '' };
-          const next = { ...existing, ...s2, ...keep, extracted_at: now };
+          const keep = { status: existing.status || 'new', notes: existing.notes || '', followup_at: existing.followup_at || '', last_contact_at: existing.last_contact_at || '' };
+          const next = enrichSupplier({ ...existing, ...s2, ...keep, extracted_at: now });
           await new Promise((resolve, reject) => {
             const r = store.put(next);
             r.onsuccess = () => resolve(true);
@@ -705,7 +1056,7 @@ class SupplierStore {
           });
           updated += 1;
         } else {
-          const row = { ...s2, extracted_at: now, status: 'new', notes: '' };
+          const row = enrichSupplier({ ...s2, extracted_at: now, status: 'new', notes: '' });
           await new Promise((resolve, reject) => {
             const r = store.add(row);
             r.onsuccess = () => resolve(true);
@@ -773,6 +1124,12 @@ class SupplierStore {
       const s = all.find(x => Number(x.id) === id);
       if (!s) return false;
       s.status = status;
+      const nowIso = this._nowIso();
+      if (status === 'sent' || status === 'contacted') s.last_contact_at = nowIso;
+      if (status === 'followup_3d') s.followup_at = daysFromNow(3);
+      if (status === 'followup_7d') s.followup_at = daysFromNow(7);
+      if (status === 'replied' || status === 'interested' || status === 'won' || status === 'lost' || status === 'not_relevant') s.followup_at = '';
+      Object.assign(s, enrichSupplier(s));
       await this._lsSaveAll(all);
       return true;
     }
@@ -780,13 +1137,19 @@ class SupplierStore {
     const db = this.db;
     const tx = db.transaction('suppliers', 'readwrite');
     const store = tx.objectStore('suppliers');
-    const row = await new Promise((resolve) => {
+    let row = await new Promise((resolve) => {
       const r = store.get(id);
       r.onsuccess = () => resolve(r.result || null);
       r.onerror = () => resolve(null);
     });
     if (!row) return false;
     row.status = status;
+    const nowIso = this._nowIso();
+    if (status === 'sent' || status === 'contacted') row.last_contact_at = nowIso;
+    if (status === 'followup_3d') row.followup_at = daysFromNow(3);
+    if (status === 'followup_7d') row.followup_at = daysFromNow(7);
+    if (status === 'replied' || status === 'interested' || status === 'won' || status === 'lost' || status === 'not_relevant') row.followup_at = '';
+    row = enrichSupplier(row);
     await new Promise((resolve, reject) => {
       const r = store.put(row);
       r.onsuccess = () => resolve(true);
@@ -1968,9 +2331,14 @@ async function renderCards() {
   const q = document.getElementById('qInput').value || '';
   const statusRaw = document.getElementById('statusSel').value;
   const status = (statusRaw === 'all') ? '' : statusRaw;
+  const segmentRaw = (document.getElementById('segmentSel') || {}).value || 'all';
+  const segment = (segmentRaw === 'all') ? '' : segmentRaw;
+  const followupDueOnly = (((document.getElementById('followupSel') || {}).value || 'all') === 'due');
+  const minScore = Number((document.getElementById('minScoreInput') || {}).value || 0);
   const view = document.getElementById('viewSel').value;
 
-  const suppliers = await store.query({q, status});
+  const suppliers = await store.query({q, status, segment, minScore, followupDueOnly});
+  await renderKpiPanel();
   // clean selection (remove ids that are gone)
   let changed = false;
   for (const id of Array.from(selected)) {
@@ -1994,7 +2362,7 @@ async function renderCards() {
       <table class="table">
         <thead><tr>
           <th>✓</th>
-          <th>Компания</th><th>ИП</th><th>ФИО поставщика</th><th>ФИО руководителя</th><th>Телефон</th><th>Email</th><th>ИНН</th><th>Адрес</th><th>Объект</th><th>Источник</th><th>Статус</th><th>Сообщение</th>
+          <th>Компания</th><th>ИП</th><th>ФИО поставщика</th><th>ФИО руководителя</th><th>Телефон</th><th>Email</th><th>ИНН</th><th>Адрес</th><th>Объект</th><th>Источник</th><th>Сегмент</th><th>Скоринг</th><th>Follow-up</th><th>Статус</th><th>Сообщение</th>
         </tr></thead>
         <tbody></tbody>
       </table>`;
@@ -2013,6 +2381,9 @@ async function renderCards() {
         <td>${escapeHtml(s.address)}</td>
         <td><div class="cell-scroll">${escapeHtml(s.purchase_object_name||'')}</div></td>
         <td>${escapeHtml(s.source_file||'')}</td>
+        <td>${escapeHtml(s.segment||'')}</td>
+        <td>${escapeHtml(s.lead_score||0)}</td>
+        <td>${escapeHtml((s.followup_at||'').slice(0,10))}</td>
         <td>${escapeHtml(s.status||'')}</td>
         <td>
           <button class="btn btn--ghost" type="button" data-copy-msg="1" data-id="${s.id}" style="padding:6px 10px;border-radius:10px">Copy</button>
@@ -2060,6 +2431,9 @@ async function renderCards() {
           <div class="row"><div class="k">Объект:</div><div class="v trunc">${escapeHtml(s.purchase_object_name||'')}</div></div>
           <div class="row"><div class="k">Адрес:</div><div class="v trunc">${escapeHtml(s.address)}</div></div>
           <div class="row"><div class="k">Источник:</div><div class="v muted trunc">${escapeHtml(s.source_file||'')}</div></div>
+          <div class="row"><div class="k">Сегмент:</div><div class="v">${escapeHtml(s.segment||'')}</div></div>
+          <div class="row"><div class="k">Скоринг:</div><div class="v">${escapeHtml(s.lead_score||0)}</div></div>
+          <div class="row"><div class="k">Follow-up:</div><div class="v">${escapeHtml((s.followup_at||'').slice(0,10))}</div></div>
           <div class="row"><div class="k">Статус:</div><div class="v">
             <select class="select" data-status-sel="${s.id}" style="min-width:160px">
               ${STATUS_LIST.map(st => `<option value="${st}" ${st===s.status?'selected':''}>${st}</option>`).join('')}
@@ -2073,6 +2447,23 @@ async function renderCards() {
   }
 
   updateSelectedUI(selected);
+}
+
+async function renderKpiPanel() {
+  const all = (await store.getAll()).map(enrichSupplier);
+  const sent = all.filter(x => x.status === 'sent').length;
+  const replied = all.filter(x => x.status === 'replied' || x.status === 'interested' || x.status === 'call_scheduled' || x.status === 'won').length;
+  const interested = all.filter(x => x.status === 'interested' || x.status === 'call_scheduled' || x.status === 'won').length;
+  const newCnt = all.filter(x => x.status === 'new').length;
+  const replyRate = sent ? Math.round((replied / sent) * 100) : 0;
+  const interestRate = sent ? Math.round((interested / sent) * 100) : 0;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v); };
+  set('kpiNew', newCnt);
+  set('kpiSent', sent);
+  set('kpiReplied', replied);
+  set('kpiInterested', interested);
+  set('kpiReplyRate', `${replyRate}%`);
+  set('kpiInterestRate', `${interestRate}%`);
 }
 
 function escapeHtml(s){
@@ -2428,6 +2819,7 @@ function bindNav() {
     }
     if (page === 'queue') await loadQueue();
     if (page === 'message') updateSelectedCountMsg();
+    if (page === 'campaigns') renderCampaignJournalIfOpen();
   });
 }
 
@@ -2583,6 +2975,9 @@ function bindCards() {
   const form = document.getElementById('filtersForm');
   const qInput = document.getElementById('qInput');
   const statusSel = document.getElementById('statusSel');
+  const segmentSel = document.getElementById('segmentSel');
+  const followupSel = document.getElementById('followupSel');
+  const minScoreInput = document.getElementById('minScoreInput');
   const viewSel = document.getElementById('viewSel');
   const resetBtn = document.getElementById('resetBtn');
 
@@ -2590,11 +2985,14 @@ function bindCards() {
   const saved = loadFilters();
   if (saved.q) qInput.value = saved.q;
   if (saved.status) statusSel.value = saved.status;
+  if (saved.segment && segmentSel) segmentSel.value = saved.segment;
+  if (saved.followup && followupSel) followupSel.value = saved.followup;
+  if (saved.minScore && minScoreInput) minScoreInput.value = saved.minScore;
   if (saved.view) viewSel.value = saved.view;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    saveFilters({ q: qInput.value, status: statusSel.value, view: viewSel.value });
+    saveFilters({ q: qInput.value, status: statusSel.value, segment: segmentSel ? segmentSel.value : 'all', followup: followupSel ? followupSel.value : 'all', minScore: minScoreInput ? minScoreInput.value : '', view: viewSel.value });
     await renderCards();
   });
 
@@ -2602,6 +3000,9 @@ function bindCards() {
     qInput.value = '';
     statusSel.value = 'all';
     viewSel.value = 'cards';
+    if (segmentSel) segmentSel.value = 'all';
+    if (followupSel) followupSel.value = 'all';
+    if (minScoreInput) minScoreInput.value = '';
     localStorage.removeItem(APP.FILTER_KEY);
     await renderCards();
   });
@@ -2616,15 +3017,17 @@ function bindCards() {
     saveSelectedSet(selected);
   });
 
-  document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+  document.getElementById('clearSelectionBtn').addEventListener('click', async () => {
     selected = new Set();
     saveSelectedSet(selected);
+    await renderCards();
   });
 
   document.getElementById('selectAllBtn').addEventListener('click', async () => {
     const ids = await store.getIds();
     selected = new Set(ids.map(Number).filter(Number.isFinite));
     saveSelectedSet(selected);
+    await renderCards();
   });
 
   document.getElementById('deleteSelectedBtn').addEventListener('click', async () => {
@@ -2667,6 +3070,7 @@ function bindCards() {
     if (!Number.isFinite(id)) return;
     await store.setStatus(id, st);
     toast('Статус обновлён: ' + st);
+    await renderKpiPanel();
   });
 
   // copy message
@@ -2754,6 +3158,9 @@ function bindCards() {
   'ИНН': s.inn || '',
   'Адрес': s.address || '',
   'Название объекта закупки': s.purchase_object_name || '',
+  'Сегмент': (enrichSupplier(s).segment) || '',
+  'Скоринг': (enrichSupplier(s).lead_score) || 0,
+  'FollowUp': s.followup_at || '',
   'Заметки': s.notes || '',
 }));
 if (kind === 'csv') downloadCsv(rows, 'suppliers_selected.csv');
@@ -2771,20 +3178,25 @@ function updateSelectedCountMsg() {
 
 function bindMessage() {
   const ta = document.getElementById('msgTemplate');
-  const taHtml = document.getElementById('msgTemplateHtml');
-  const sendAsHtml = document.getElementById('sendAsHtml');
+  const textTemplateWrap = document.getElementById('textTemplateWrap');
+  const sendModeTextBtn = document.getElementById('sendModeTextBtn');
+  const sendModeHtmlBtn = document.getElementById('sendModeHtmlBtn');
+  const sendModeHint = document.getElementById('sendModeHint');
+  const htmlTemplatePreviewWrap = document.getElementById('htmlTemplatePreviewWrap');
+  const htmlTemplatePreview = document.getElementById('htmlTemplatePreview');
+  const sendEmailSelectedBtn = document.getElementById('sendEmailSelectedBtn');
   const smtpUser = document.getElementById('smtpUser');
   const smtpPass = document.getElementById('smtpPass');
   const smtpFromName = document.getElementById('smtpFromName');
   const smtpSubjectTpl = document.getElementById('smtpSubjectTpl');
   const smtpDailyLimit = document.getElementById('smtpDailyLimit');
   const smtpDelayMs = document.getElementById('smtpDelayMs');
+  const smtpBatchSize = document.getElementById('smtpBatchSize');
+  const smtpWindowStart = document.getElementById('smtpWindowStart');
+  const smtpWindowEnd = document.getElementById('smtpWindowEnd');
   const emailLimitHint = document.getElementById('emailLimitHint');
-
   const saved = localStorage.getItem(APP.TEMPLATE_KEY);
   ta.value = normalizeTemplateText(saved || DEFAULT_TEMPLATE);
-  const savedHtml = localStorage.getItem(APP.TEMPLATE_HTML_KEY);
-  taHtml.value = savedHtml || '';
 
   try {
     const smtpSaved = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
@@ -2794,12 +3206,42 @@ function bindMessage() {
     smtpSubjectTpl.value = smtpSaved.subjectTpl || 'Предложение по поставкам из Китая — {company_name}';
     smtpDailyLimit.value = smtpSaved.dailyLimit || 250;
     smtpDelayMs.value = smtpSaved.delayMs || 1200;
+    if (smtpBatchSize) smtpBatchSize.value = smtpSaved.batchSize || 50;
+    if (smtpWindowStart) smtpWindowStart.value = Number.isFinite(Number(smtpSaved.windowStart)) ? Number(smtpSaved.windowStart) : 9;
+    if (smtpWindowEnd) smtpWindowEnd.value = Number.isFinite(Number(smtpSaved.windowEnd)) ? Number(smtpSaved.windowEnd) : 20;
   } catch (_) {
     smtpSubjectTpl.value = 'Предложение по поставкам из Китая — {company_name}';
   }
 
   updateSelectedCountMsg();
   window.addEventListener('focus', updateSelectedCountMsg);
+
+  let sendMode = (localStorage.getItem(APP.SEND_MODE_KEY) || 'text').trim();
+  if (sendMode !== 'html') sendMode = 'text';
+
+  function renderSendModeUi() {
+    if (sendModeTextBtn) sendModeTextBtn.className = sendMode === 'text' ? 'btn' : 'btn btn--ghost';
+    if (sendModeHtmlBtn) sendModeHtmlBtn.className = sendMode === 'html' ? 'btn' : 'btn btn--ghost';
+    if (sendModeHint) sendModeHint.textContent = sendMode === 'html' ? 'Режим: HTML письмо' : 'Режим: сообщение';
+    if (textTemplateWrap) textTemplateWrap.style.display = sendMode === 'html' ? 'none' : '';
+    if (htmlTemplatePreviewWrap) htmlTemplatePreviewWrap.style.display = sendMode === 'html' ? '' : 'none';
+    if (htmlTemplatePreview) htmlTemplatePreview.value = sendMode === 'html' ? DEFAULT_EMAIL_HTML_TEMPLATE : '';
+    if (sendEmailSelectedBtn) {
+      sendEmailSelectedBtn.textContent = sendMode === 'html'
+        ? 'Отправить письмо'
+        : 'Отправить сообщение';
+    }
+  }
+
+  function setSendMode(mode) {
+    sendMode = mode === 'html' ? 'html' : 'text';
+    localStorage.setItem(APP.SEND_MODE_KEY, sendMode);
+    renderSendModeUi();
+  }
+
+  if (sendModeTextBtn) sendModeTextBtn.addEventListener('click', () => setSendMode('text'));
+  if (sendModeHtmlBtn) sendModeHtmlBtn.addEventListener('click', () => setSendMode('html'));
+  renderSendModeUi();
 
   function getSmtpSettings() {
     return {
@@ -2809,11 +3251,76 @@ function bindMessage() {
       subjectTpl: String(smtpSubjectTpl.value || '').trim() || 'Предложение по поставкам из Китая — {company_name}',
       dailyLimit: Number(smtpDailyLimit.value || 250),
       delayMs: Number(smtpDelayMs.value || 1200),
+      batchSize: Number((smtpBatchSize && smtpBatchSize.value) || 50),
+      windowStart: Number((smtpWindowStart && smtpWindowStart.value) || 9),
+      windowEnd: Number((smtpWindowEnd && smtpWindowEnd.value) || 20),
     };
   }
 
   function saveSmtpSettings() {
     localStorage.setItem(APP.SMTP_KEY, JSON.stringify(getSmtpSettings()));
+  }
+
+  function withinSendWindow(s) {
+    const h = new Date().getHours();
+    const start = Math.max(0, Math.min(23, Number(s.windowStart || 9)));
+    const end = Math.max(0, Math.min(23, Number(s.windowEnd || 20)));
+    if (start === end) return true;
+    if (start < end) return h >= start && h < end;
+    return h >= start || h < end;
+  }
+
+  async function exportManagerTasks() {
+    const all = (await store.getAll()).map(enrichSupplier);
+    const now = Date.now();
+    const rows = all
+      .filter(s => {
+        const due = s.followup_at ? new Date(s.followup_at).getTime() : null;
+        return s.status === 'interested' || s.status === 'replied' || s.status === 'call_scheduled' || (due && due <= now);
+      })
+      .map(s => ({
+        priority: Math.max(0, Math.min(100, Number(s.lead_score || 0) + (s.status === 'interested' ? 15 : 0) + (s.status === 'call_scheduled' ? 20 : 0))),
+        next_action: s.status === 'call_scheduled' ? 'Созвон' : (s.status === 'interested' ? 'Коммерческое предложение' : 'Follow-up'),
+        company_name: s.company_name || '',
+        director_fio: s.director_fio || '',
+        phone: s.phone_e164 || '',
+        email: s.email || '',
+        inn: s.inn || '',
+        segment: s.segment || '',
+        status: s.status || '',
+        followup_at: s.followup_at || '',
+        source_file: s.source_file || ''
+      }))
+      .sort((a,b) => Number(b.priority||0) - Number(a.priority||0));
+
+    if (!rows.length) {
+      alert('Нет задач менеджеру по текущей базе.');
+      return;
+    }
+    downloadCsv(rows, 'manager_tasks.csv');
+  }
+
+  async function autoScheduleFollowups() {
+    const all = (await store.getAll()).map(enrichSupplier);
+    const now = Date.now();
+    let set3 = 0;
+    let set7 = 0;
+    for (const s of all) {
+      if (!s.id) continue;
+      if (s.status !== 'sent' && s.status !== 'no_answer') continue;
+      const baseTs = s.last_contact_at ? new Date(s.last_contact_at).getTime() : new Date(s.extracted_at || s.created_at || 0).getTime();
+      if (!Number.isFinite(baseTs)) continue;
+      const days = (now - baseTs) / (1000 * 60 * 60 * 24);
+      if (days >= 7) {
+        await store.setStatus(s.id, 'followup_7d');
+        set7 += 1;
+      } else if (days >= 3) {
+        await store.setStatus(s.id, 'followup_3d');
+        set3 += 1;
+      }
+    }
+    await renderCards();
+    toast(`Follow-up: 3д=${set3}, 7д=${set7}`);
   }
 
   async function checkEmailLimit(requestedCount) {
@@ -2837,7 +3344,6 @@ function bindMessage() {
   document.getElementById('saveTemplateBtn').addEventListener('click', () => {
     localStorage.setItem(APP.TEMPLATE_KEY, normalizeTemplateText(ta.value || ''));
     ta.value = normalizeTemplateText(ta.value || '');
-    localStorage.setItem(APP.TEMPLATE_HTML_KEY, taHtml.value || '');
     saveSmtpSettings();
     updateSelectedCountMsg();
     toast('Сохранено');
@@ -2866,6 +3372,9 @@ function bindMessage() {
       address: s.address || '',
       source_file: s.source_file || '',
       status: s.status || '',
+      segment: enrichSupplier(s).segment || '',
+      lead_score: enrichSupplier(s).lead_score || 0,
+      followup_at: s.followup_at || '',
       message: renderTemplate(tpl, s),
     }));
     if (kind === 'csv') downloadCsv(rows, 'messages_selected.csv');
@@ -2898,14 +3407,14 @@ function bindMessage() {
 
       const suppliers = await store.getByIds(ids);
       const tpl = normalizeTemplateText(ta.value || '');
-      const tplHtml = taHtml.value || '';
+      const tplHtml = DEFAULT_EMAIL_HTML_TEMPLATE;
       const subjectTpl = smtp.subjectTpl || 'Предложение по поставкам из Китая — {company_name}';
-      const useHtml = !!(sendAsHtml && sendAsHtml.checked && tplHtml.trim());
+      const useHtml = sendMode === 'html';
       const messages = suppliers
         .filter(s => !!(s && s.email))
         .map(s => ({
           to: String(s.email || '').trim(),
-          subject: renderTemplate(subjectTpl, s),
+          subject: renderTemplate(chooseSubjectVariant(subjectTpl, s), s),
           text: renderTemplate(tpl, s),
           html: useHtml ? renderTemplate(tplHtml, s) : '',
           supplierId: s.id
@@ -2916,46 +3425,350 @@ function bindMessage() {
         return;
       }
 
+      if (!withinSendWindow(smtp)) {
+        alert(`Сейчас вне окна отправки (${smtp.windowStart}:00-${smtp.windowEnd}:00).`);
+        return;
+      }
+
       const lim = await checkEmailLimit(messages.length);
       if (!lim.canSend) {
-        const proceed = confirm(`Лимит не позволяет отправить все письма.\nМожно отправить: ${lim.remaining} из ${messages.length}.\nПродолжить?`);
+        const proceed = confirm(`Лимит не позволяет отправить все письма.
+Можно отправить: ${lim.remaining} из ${messages.length}.
+Продолжить?`);
         if (!proceed) return;
       }
 
-      const proceedSend = confirm(`Отправить ${messages.length} писем с ${smtp.user}?`);
+      const batchSize = Math.max(1, Number(smtp.batchSize || 50));
+      const actualLimit = Math.max(0, Number(lim.remaining || 0));
+      const actualCount = Math.min(messages.length, batchSize, (actualLimit || batchSize));
+      const batch = messages.slice(0, actualCount);
+
+      const proceedSend = confirm(`Отправить сейчас ${batch.length} писем с ${smtp.user}? (всего выбрано ${messages.length})`);
       if (!proceedSend) return;
 
-      const base = ocrHelperBase();
-      const r = await fetch(base + '/email/send-batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          smtp: {
-            user: smtp.user,
-            pass: smtp.pass,
-            fromName: smtp.fromName,
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: 'tls'
-          },
-          dailyLimit: Number(smtp.dailyLimit || 250),
-          delayMs: Number(smtp.delayMs || 1200),
-          messages
-        })
+      const j = await sendBatchViaHelper({
+        smtp,
+        messages: batch
       });
-      const j = await r.json();
-      if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'email_send_failed');
 
       let errPart = '';
       try {
         const firstErr = (j.results || []).find(x => x && x.ok === false && x.error);
         if (firstErr) errPart = ` Первая ошибка: ${String(firstErr.error).slice(0, 240)}`;
       } catch (_) {}
+
+      const logEntries = [];
+      const byEmail = new Map(suppliers.map(s => [String((s && s.email) || '').trim().toLowerCase(), s]));
+      for (const r1 of (j.results || [])) {
+        const emailKey = String((r1 && r1.to) || '').trim().toLowerCase();
+        const sup = byEmail.get(emailKey) || null;
+        if (r1 && r1.ok && sup && sup.id) {
+          await store.setStatus(sup.id, 'sent');
+        }
+        logEntries.push({
+          at: new Date().toISOString(),
+          ok: !!(r1 && r1.ok),
+          to: (r1 && r1.to) || '',
+          error: (r1 && r1.error) || '',
+          subjectTpl,
+          supplierId: sup ? sup.id : null,
+          company_name: sup ? (sup.company_name || '') : ''
+        });
+      }
+      appendEmailLog(logEntries);
+
       emailLimitHint.textContent = `Email отправка: sent=${j.sent}, failed=${j.failed}, skippedByLimit=${j.skippedByLimit}, осталось=${j.remaining}.${errPart}`;
       toast(`Email: отправлено ${j.sent}, ошибок ${j.failed}`);
+      await renderCards();
     } catch (e) {
       toast('Ошибка отправки Email: ' + String(e && e.message ? e.message : e));
     }
+  });
+}
+
+let __campaignTimer = null;
+let __campaignRunning = false;
+
+function bindCampaigns() {
+  const campIntervalMin = document.getElementById('campIntervalMin');
+  const campBatchSize = document.getElementById('campBatchSize');
+  const campWindowStart = document.getElementById('campWindowStart');
+  const campWindowEnd = document.getElementById('campWindowEnd');
+  const campCooldownHours = document.getElementById('campCooldownHours');
+  const suppressionList = document.getElementById('suppressionList');
+  const campaignStatus = document.getElementById('campaignStatus');
+
+  function uiStatus(msg) {
+    if (campaignStatus) campaignStatus.textContent = msg;
+  }
+
+  function loadIntoUi() {
+    const s = loadCampaignSettings();
+    if (campIntervalMin) campIntervalMin.value = s.intervalMin;
+    if (campBatchSize) campBatchSize.value = s.batchSize;
+    if (campWindowStart) campWindowStart.value = s.windowStart;
+    if (campWindowEnd) campWindowEnd.value = s.windowEnd;
+    if (campCooldownHours) campCooldownHours.value = s.cooldownHours;
+    if (suppressionList) suppressionList.value = String(localStorage.getItem(APP.SUPPRESSION_KEY) || '');
+    uiStatus(s.active ? `Авто-кампания активна. Последний запуск: ${s.lastRunAt || 'еще не было'}` : 'Кампания не запущена.');
+  }
+
+  function saveFromUi(activeOverride = null) {
+    const prev = loadCampaignSettings();
+    const next = {
+      intervalMin: Math.max(1, Number((campIntervalMin && campIntervalMin.value) || prev.intervalMin || 15)),
+      batchSize: Math.max(1, Number((campBatchSize && campBatchSize.value) || prev.batchSize || 25)),
+      windowStart: Math.max(0, Math.min(23, Number((campWindowStart && campWindowStart.value) || prev.windowStart || 9))),
+      windowEnd: Math.max(0, Math.min(23, Number((campWindowEnd && campWindowEnd.value) || prev.windowEnd || 20))),
+      cooldownHours: Math.max(0, Number((campCooldownHours && campCooldownHours.value) || prev.cooldownHours || 48)),
+      active: activeOverride === null ? !!prev.active : !!activeOverride,
+      lastRunAt: String(prev.lastRunAt || '')
+    };
+    saveCampaignSettings(next);
+    return next;
+  }
+
+  function inWindow(s) {
+    const h = new Date().getHours();
+    const start = Number(s.windowStart || 9);
+    const end = Number(s.windowEnd || 20);
+    if (start === end) return true;
+    if (start < end) return h >= start && h < end;
+    return h >= start || h < end;
+  }
+
+  function recentlySentToDomain(domain, cooldownHours) {
+    if (!domain) return false;
+    const limitMs = Math.max(0, Number(cooldownHours || 0)) * 60 * 60 * 1000;
+    if (!limitMs) return false;
+    const now = Date.now();
+    const log = loadEmailLog();
+    for (let i = log.length - 1; i >= 0; i--) {
+      const e = log[i] || {};
+      if (!e.ok) continue;
+      const d = emailDomain(e.to || '');
+      if (d !== domain) continue;
+      const ts = new Date(e.at || 0).getTime();
+      if (!Number.isFinite(ts)) continue;
+      return (now - ts) < limitMs;
+    }
+    return false;
+  }
+
+  function renderJournal() {
+    const wrap = document.getElementById('campaignJournal');
+    if (!wrap) return;
+    const log = loadEmailLog().slice(-120).reverse();
+    if (!log.length) {
+      wrap.innerHTML = '<div class="muted">Журнал пуст.</div>';
+      return;
+    }
+    const rows = log.map(e => `
+      <tr>
+        <td>${escapeHtml(String(e.at || '').replace('T', ' ').slice(0, 19))}</td>
+        <td>${e.ok ? 'ok' : 'failed'}</td>
+        <td>${escapeHtml(e.to || '')}</td>
+        <td>${escapeHtml(e.company_name || '')}</td>
+        <td>${escapeHtml((e.error || '').slice(0, 120))}</td>
+        <td>${escapeHtml(e.source || 'manual')}</td>
+      </tr>
+    `).join('');
+    wrap.innerHTML = `<div class="tablewrap"><table class="table"><thead><tr><th>Время</th><th>Статус</th><th>Email</th><th>Компания</th><th>Ошибка</th><th>Источник</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  async function buildCampaignMessages(limitCount, includeFailedSupplierIds = null) {
+    const smtp = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
+    if (!smtp.user || !smtp.pass) throw new Error('Заполните SMTP в вкладке "Сообщение"');
+
+    const template = normalizeTemplateText(localStorage.getItem(APP.TEMPLATE_KEY) || DEFAULT_TEMPLATE);
+    const tplHtml = DEFAULT_EMAIL_HTML_TEMPLATE;
+    const useHtml = String(localStorage.getItem(APP.SEND_MODE_KEY) || 'text') === 'html';
+
+    let suppliers = [];
+    if (includeFailedSupplierIds && includeFailedSupplierIds.length) {
+      suppliers = await store.getByIds(includeFailedSupplierIds);
+    } else {
+      const ids = Array.from(loadSelectedSet()).map(Number).filter(Number.isFinite);
+      if (!ids.length) throw new Error('Выберите карточки на вкладке "Карточки"');
+      suppliers = await store.getByIds(ids);
+    }
+
+    const camp = loadCampaignSettings();
+    const suppression = loadSuppressionSet();
+    const blockedStatuses = new Set(['won','lost','ignore','not_relevant']);
+
+    const filtered = suppliers
+      .map(enrichSupplier)
+      .filter(s => s && s.email)
+      .filter(s => !blockedStatuses.has(String(s.status || '')))
+      .filter(s => !isSuppressedEmail(s.email, suppression))
+      .filter(s => !recentlySentToDomain(emailDomain(s.email), camp.cooldownHours));
+
+    const maxCount = Math.max(1, Number(limitCount || camp.batchSize || 25));
+    const chosen = filtered.slice(0, maxCount);
+
+    const messages = chosen.map(s => ({
+      to: String(s.email || '').trim(),
+      subject: renderTemplate(chooseSubjectVariant(String(smtp.subjectTpl || 'Предложение по поставкам из Китая — {company_name}'), s), s),
+      text: renderTemplate(template, s),
+      html: useHtml ? renderTemplate(tplHtml, s) : '',
+      supplierId: s.id,
+      company_name: s.company_name || ''
+    }));
+
+    return { smtp, messages };
+  }
+
+  async function markAndLogResults(results, source) {
+    const entries = [];
+    for (const r of (results || [])) {
+      if (r && r.ok && r.supplierId) {
+        await store.setStatus(r.supplierId, 'sent');
+      }
+      entries.push({
+        at: new Date().toISOString(),
+        ok: !!(r && r.ok),
+        to: (r && r.to) || '',
+        error: (r && r.error) || '',
+        supplierId: (r && r.supplierId) || null,
+        company_name: (r && r.company_name) || '',
+        source: source || 'campaign'
+      });
+    }
+    appendEmailLog(entries);
+  }
+
+  async function runOnce(source = 'campaign') {
+    if (__campaignRunning) return;
+    __campaignRunning = true;
+    try {
+      const camp = loadCampaignSettings();
+      if (!inWindow(camp)) {
+        uiStatus(`Ожидание окна ${camp.windowStart}:00-${camp.windowEnd}:00`);
+        return;
+      }
+      const built = await buildCampaignMessages(camp.batchSize);
+      if (!built.messages.length) {
+        uiStatus('Нет подходящих получателей (выборка/ suppression / cooldown / статус).');
+        return;
+      }
+
+      const j = await sendBatchViaHelper({ smtp: built.smtp, messages: built.messages });
+      const mapped = (j.results || []).map((x, idx) => ({ ...(x || {}), supplierId: built.messages[idx] ? built.messages[idx].supplierId : null, company_name: built.messages[idx] ? built.messages[idx].company_name : '' }));
+      await markAndLogResults(mapped, source);
+
+      const next = { ...camp, lastRunAt: new Date().toISOString() };
+      saveCampaignSettings(next);
+      uiStatus(`Кампания: sent=${j.sent}, failed=${j.failed}, skipped=${j.skippedByLimit}, lastRun=${next.lastRunAt}`);
+      renderJournal();
+      await renderCards();
+    } catch (e) {
+      uiStatus('Ошибка кампании: ' + String(e && e.message ? e.message : e));
+    } finally {
+      __campaignRunning = false;
+    }
+  }
+
+  function stopTimer() {
+    if (__campaignTimer) {
+      clearInterval(__campaignTimer);
+      __campaignTimer = null;
+    }
+  }
+
+  function startTimer() {
+    stopTimer();
+    const s = loadCampaignSettings();
+    const ms = Math.max(1, Number(s.intervalMin || 15)) * 60 * 1000;
+    __campaignTimer = setInterval(() => {
+      runOnce('campaign-auto');
+    }, ms);
+  }
+
+  document.getElementById('saveCampaignBtn').addEventListener('click', () => {
+    const s = saveFromUi(null);
+    if (suppressionList) localStorage.setItem(APP.SUPPRESSION_KEY, String(suppressionList.value || ''));
+    uiStatus(`Настройки кампании сохранены. Интервал ${s.intervalMin} мин, партия ${s.batchSize}.`);
+    renderJournal();
+  });
+
+  document.getElementById('saveSuppressionBtn').addEventListener('click', () => {
+    localStorage.setItem(APP.SUPPRESSION_KEY, String((suppressionList && suppressionList.value) || ''));
+    toast('Suppression list сохранён');
+  });
+
+  document.getElementById('runCampaignNowBtn').addEventListener('click', async () => {
+    saveFromUi(null);
+    await runOnce('campaign-manual');
+  });
+
+  document.getElementById('startCampaignBtn').addEventListener('click', async () => {
+    const s = saveFromUi(true);
+    if (suppressionList) localStorage.setItem(APP.SUPPRESSION_KEY, String(suppressionList.value || ''));
+    startTimer();
+    uiStatus(`Авто-кампания включена. Интервал ${s.intervalMin} мин.`);
+    await runOnce('campaign-start');
+  });
+
+  document.getElementById('stopCampaignBtn').addEventListener('click', () => {
+    const s = saveFromUi(false);
+    stopTimer();
+    uiStatus('Авто-кампания остановлена.');
+  });
+
+  document.getElementById('retryFailedBtn').addEventListener('click', async () => {
+    try {
+      const camp = loadCampaignSettings();
+      const log = loadEmailLog().slice().reverse();
+      const ids = [];
+      const used = new Set();
+      for (const e of log) {
+        if (e && e.ok === false && Number.isFinite(Number(e.supplierId))) {
+          const id = Number(e.supplierId);
+          if (used.has(id)) continue;
+          used.add(id);
+          ids.push(id);
+          if (ids.length >= Math.max(1, Number(camp.batchSize || 25))) break;
+        }
+      }
+      if (!ids.length) { uiStatus('Нет failed записей для повтора.'); return; }
+      const built = await buildCampaignMessages(camp.batchSize, ids);
+      if (!built.messages.length) { uiStatus('Нет писем для повтора после фильтров.'); return; }
+      const j = await sendBatchViaHelper({ smtp: built.smtp, messages: built.messages });
+      const mapped = (j.results || []).map((x, idx) => ({ ...(x || {}), supplierId: built.messages[idx] ? built.messages[idx].supplierId : null, company_name: built.messages[idx] ? built.messages[idx].company_name : '' }));
+      await markAndLogResults(mapped, 'campaign-retry');
+      uiStatus(`Retry: sent=${j.sent}, failed=${j.failed}`);
+      renderJournal();
+      await renderCards();
+    } catch (e) {
+      uiStatus('Ошибка retry: ' + String(e && e.message ? e.message : e));
+    }
+  });
+
+  document.getElementById('refreshJournalBtn').addEventListener('click', renderJournal);
+
+  loadIntoUi();
+  renderJournal();
+
+  const s = loadCampaignSettings();
+  if (s.active) startTimer();
+}
+
+function renderCampaignJournalIfOpen() {
+  const r = currentRoute();
+  if (r.page !== 'campaigns') return;
+  const btn = document.getElementById('refreshJournalBtn');
+  if (btn) btn.click();
+}
+
+function bindHelpTips() {
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-help-target]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-help-target');
+    const tip = document.getElementById(id);
+    if (!tip) return;
+    tip.classList.toggle('is-on');
   });
 }
 
@@ -3010,6 +3823,9 @@ function bindTopExports() {
   'ИНН': s.inn || '',
   'Адрес': s.address || '',
   'Название объекта закупки': s.purchase_object_name || '',
+  'Сегмент': (enrichSupplier(s).segment) || '',
+  'Скоринг': (enrichSupplier(s).lead_score) || 0,
+  'FollowUp': s.followup_at || '',
   'Заметки': s.notes || '',
 }));
 downloadCsv(rows, 'suppliers_all.csv');
@@ -3051,6 +3867,8 @@ downloadCsv(rows, 'suppliers_all.csv');
   bindImport();
   bindCards();
   bindMessage();
+  bindCampaigns();
+  bindHelpTips();
   bindQueue();
   bindTopExports();
 
@@ -3061,9 +3879,11 @@ downloadCsv(rows, 'suppliers_all.csv');
   if (page === 'cards') await renderCards();
   if (page === 'queue') await loadQueue();
   if (page === 'message') updateSelectedCountMsg();
+  if (page === 'campaigns') renderCampaignJournalIfOpen();
 
   // ensure defaults in storage
   if (!localStorage.getItem(APP.TEMPLATE_KEY)) localStorage.setItem(APP.TEMPLATE_KEY, DEFAULT_TEMPLATE);
+  applyTopLogoFromUrl();
 
   // When opening without hash
   if (!location.hash) location.hash = '#cards';

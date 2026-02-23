@@ -39,6 +39,7 @@ const CACHE_DIR = path.join(__dirname, ".cache");
 const TESSDATA_DIR = path.join(__dirname, "tessdata");
 const LANG_PATH_ENV = (process.env.OCR_LANG_PATH || "").trim();
 const EMAIL_RATE_STATE = path.join(CACHE_DIR, "email_rate_state.json");
+const ROOT_LOGO_PATH = path.join(__dirname, "..", "logo.png");
 
 function resolveLangPath() {
   if (LANG_PATH_ENV) return LANG_PATH_ENV;
@@ -57,6 +58,34 @@ function stringifyErr(err) {
     return String(err);
   } catch (e) {
     try { return String(err); } catch { return "Unknown error"; }
+  }
+}
+
+
+function parseDataUrlImage(dataUrl) {
+  try {
+    const s = String(dataUrl || '').trim();
+    const m = s.match(/^data:(image\/(png|jpeg|jpg|gif|webp));base64,([A-Za-z0-9+/=\s]+)$/i);
+    if (!m) return null;
+    const mime = m[1].toLowerCase();
+    const ext = mime.includes('png') ? 'png' : (mime.includes('jpeg') || mime.includes('jpg')) ? 'jpg' : mime.includes('gif') ? 'gif' : 'webp';
+    const b64 = m[3].replace(/\s+/g, '');
+    const content = Buffer.from(b64, 'base64');
+    if (!content || !content.length) return null;
+    return { mime, ext, content };
+  } catch (_) {
+    return null;
+  }
+}
+
+function loadDefaultLogoImage() {
+  try {
+    if (!fs.existsSync(ROOT_LOGO_PATH)) return null;
+    const content = fs.readFileSync(ROOT_LOGO_PATH);
+    if (!content || !content.length) return null;
+    return { mime: "image/png", ext: "png", content };
+  } catch (_) {
+    return null;
   }
 }
 
@@ -159,6 +188,8 @@ app.post("/email/send-batch", async (req, res) => {
     const messages = Array.isArray(body.messages) ? body.messages : [];
     const dailyLimit = parsePositiveInt(body.dailyLimit, 300);
     const delayMs = parsePositiveInt(body.delayMs, 1200);
+    const logoDataUrl = String(body.logoDataUrl || '').trim();
+    const logoImage = parseDataUrlImage(logoDataUrl) || loadDefaultLogoImage();
 
     const user = String(smtp.user || "").trim();
     const pass = String(smtp.pass || "").trim();
@@ -203,7 +234,19 @@ app.post("/email/send-batch", async (req, res) => {
         results.push({ ok: false, to, error: "invalid_message_fields" });
       } else {
         try {
-          await transporter.sendMail({ from, to, subject, text: text || undefined, html: html || undefined });
+          const mail = { from, to, subject, text: text || undefined, html: html || undefined };
+          if (logoImage && html) {
+            const cid = html.includes('cid:brandlogo@sb') ? 'brandlogo@sb' : 'brandlogo';
+            mail.attachments = [{
+              filename: `logo.${logoImage.ext}`,
+              content: logoImage.content,
+              contentType: logoImage.mime,
+              cid,
+              contentDisposition: 'inline',
+              headers: { 'X-Attachment-Id': cid }
+            }];
+          }
+          await transporter.sendMail(mail);
           sent += 1;
           results.push({ ok: true, to });
         } catch (e) {
