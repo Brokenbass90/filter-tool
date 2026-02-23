@@ -453,6 +453,7 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
 
         <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;">
           <button id="saveTemplateBtn" class="btn" type="button">Сохранить</button>
+          <button id="resetHtmlTemplateBtn" class="btn btn--ghost" type="button">Сбросить HTML шаблон</button>
           <button id="checkEmailLimitBtn" class="btn btn--ghost" type="button">Проверить лимит Email</button>
           <button id="sendEmailSelectedBtn" class="btn" type="button">Отправить Email выбранным</button>
           <button id="exportMsgCsvBtn" class="btn" type="button">Скачать CSV (сообщения для выбранных)</button>
@@ -3339,6 +3340,7 @@ function bindMessage() {
   const htmlTemplateEditor = document.getElementById('htmlTemplateEditor');
   const htmlTemplateLivePreview = document.getElementById('htmlTemplateLivePreview');
   const sendEmailSelectedBtn = document.getElementById('sendEmailSelectedBtn');
+  const resetHtmlTemplateBtn = document.getElementById('resetHtmlTemplateBtn');
   const smtpUser = document.getElementById('smtpUser');
   const smtpPass = document.getElementById('smtpPass');
   const smtpFromName = document.getElementById('smtpFromName');
@@ -3520,6 +3522,17 @@ function bindMessage() {
     updateSelectedCountMsg();
     toast('Сохранено');
   });
+
+  if (resetHtmlTemplateBtn) {
+    resetHtmlTemplateBtn.addEventListener('click', () => {
+      if (htmlTemplateEditor) {
+        htmlTemplateEditor.value = DEFAULT_EMAIL_HTML_TEMPLATE;
+        localStorage.setItem(APP.TEMPLATE_HTML_KEY, DEFAULT_EMAIL_HTML_TEMPLATE);
+        renderHtmlLivePreview();
+        toast('HTML шаблон сброшен на стандартный');
+      }
+    });
+  }
 
   document.querySelectorAll('[data-copy]').forEach(el => {
     el.addEventListener('click', async () => {

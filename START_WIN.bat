@@ -23,6 +23,25 @@ if errorlevel 1 (
   )
 )
 
+for /f %%V in ('node -p "process.versions.node.split('.')[0]"') do set "NODE_MAJOR=%%V"
+if "%NODE_MAJOR%"=="" set "NODE_MAJOR=0"
+if %NODE_MAJOR% GEQ 24 (
+  echo Обнаружен Node.js v%NODE_MAJOR%.x — для OCR нужен LTS 20/22.
+  if exist "nodejs-lts-x64.msi" (
+    echo Запускаю установщик nodejs-lts-x64.msi...
+    start /wait "" "nodejs-lts-x64.msi"
+    echo.
+    echo Установка/обновление завершено. Запустите START_WIN.bat еще раз.
+    pause
+    exit /b 1
+  ) else (
+    echo Положите установщик nodejs-lts-x64.msi в корень архива и запустите снова.
+    start "" "https://nodejs.org/en/download/"
+    pause
+    exit /b 1
+  )
+)
+
 echo [0/3] Останавливаю старые процессы OCR...
 for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command "$p=Get-NetTCPConnection -LocalPort %PORT% -State Listen -ErrorAction SilentlyContinue; if($p){$p|%%{$_.OwningProcess}}"`) do (
   if not "%%P"=="" (
@@ -44,7 +63,18 @@ for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command "$p=Get-CimIns
 )
 
 echo [1/3] Проверяю зависимости OCR helper...
-if not exist "helper\node_modules\nodemailer\package.json" (
+set "NEED_NPM=0"
+if not exist "helper\node_modules\nodemailer\package.json" set "NEED_NPM=1"
+if not exist "helper\node_modules\canvas\package.json" set "NEED_NPM=1"
+if not exist "helper\.node_major.txt" set "NEED_NPM=1"
+if exist "helper\.node_major.txt" (
+  set /p PREV_NODE_MAJOR=<helper\.node_major.txt
+  if not "!PREV_NODE_MAJOR!"=="%NODE_MAJOR%" set "NEED_NPM=1"
+)
+
+if "%NEED_NPM%"=="1" (
+  echo Обновляю зависимости helper под Node.js %NODE_MAJOR%...
+  if exist "helper\node_modules" rmdir /s /q "helper\node_modules"
   pushd helper
   call npm install
   if errorlevel 1 (
@@ -54,6 +84,7 @@ if not exist "helper\node_modules\nodemailer\package.json" (
     exit /b 1
   )
   popd
+  > "helper\.node_major.txt" echo %NODE_MAJOR%
 )
 
 echo [2/3] Запускаю OCR сервер...
