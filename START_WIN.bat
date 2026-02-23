@@ -57,7 +57,7 @@ if not exist "helper\node_modules\nodemailer\package.json" (
 )
 
 echo [2/3] Запускаю OCR сервер...
-start "Strong Bridge OCR Server" cmd /k "cd /d \"%cd%\" && node helper\ocr_helper_server.js"
+start "Strong Bridge OCR Server" cmd /k "cd /d ""%cd%"" && node helper\ocr_helper_server.js"
 
 echo [3/3] Жду готовность OCR сервера...
 set /a TRY=0
