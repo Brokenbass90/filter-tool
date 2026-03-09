@@ -240,7 +240,7 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
   }
 </style>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="./vendor/pdfjs/pdf.min.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -253,7 +253,8 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
       </div>
       <nav class="nav">
         <a href="#cards" data-nav="cards">Карточки</a>
-        <a href="#import" data-nav="import">Импорт</a>
+        <a href="#import" data-nav="import">Ручной импорт</a>
+        <a href="#autoleads" data-nav="autoleads">Автопоиск</a>
         <a href="#message" data-nav="message">Сообщение</a>
         <a href="#queue" data-nav="queue">Очередь</a>
         <a href="#campaigns" data-nav="campaigns">Кампании</a>
@@ -275,7 +276,7 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
     <!-- IMPORT -->
     <section id="page-import" class="page panel">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <h1 class="h1" style="margin:0">Импорт файлов (.html или .zip)</h1>
+        <h1 class="h1" style="margin:0">Ручной импорт файлов (.html/.zip/.pdf)</h1>
         <button class="help-btn" type="button" data-help-target="help-import">?</button>
       </div>
       <div id="help-import" class="help-tip">Загрузите .html/.zip/.pdf, затем нажмите «Импортировать». Для сканов PDF включите OCR и дождитесь статуса завершения.</div>
@@ -355,6 +356,100 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
         </div>
 
         <div class="panel" id="importReport" style="display:none"></div>
+
+      </div>
+    </section>
+
+    <!-- AUTO LEADS -->
+    <section id="page-autoleads" class="page panel">
+      <div class="panel panel--note" id="autoLeadPanel" style="margin-top:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <h2 style="margin:0">Автоматический поиск клиентов (пилот)</h2>
+          <button class="help-btn" type="button" data-help-target="help-autolead">?</button>
+        </div>
+        <div id="help-autolead" class="help-tip">Собирает новые тендеры из TED и Cyprus eProcurement (opened tenders), ставит приоритет и импортирует в карточки.</div>
+        <div class="muted" style="margin-top:8px;">Ручной импорт файлов остается на отдельной странице «Ручной импорт».</div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:10px;">
+          <label class="check" style="margin:0;">
+            <input type="checkbox" id="autoSrcTed" checked />
+            <span>TED (EU)</span>
+          </label>
+          <label class="check" style="margin:0;">
+            <input type="checkbox" id="autoSrcCyprus" checked />
+            <span>Cyprus eProcurement (opened tenders)</span>
+          </label>
+          <label class="check" style="margin:0;">
+            <input type="checkbox" id="autoSrcZakupkiRu" />
+            <span>Zakupki.gov.ru (RU)</span>
+          </label>
+          <label class="check" style="margin:0;">
+            <input type="checkbox" id="autoSrcGoszakupKz" />
+            <span>Goszakup.gov.kz (KZ API)</span>
+          </label>
+          <label class="check" style="margin:0;">
+            <input type="checkbox" id="autoSrcIcetradeBy" />
+            <span>Icetrade.by (BY)</span>
+          </label>
+        </div>
+
+        <label class="check" style="margin-top:8px;">
+          <input type="checkbox" id="autoTedRuOnly" />
+          <span>TED: только Россия (RUS) для RU_CIS</span>
+        </label>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:10px;">
+          <div>
+            <div class="muted" style="font-size:12px;margin-bottom:4px;">Гео-база</div>
+            <select id="autoGeoBucket" class="select">
+              <option value="CYPRUS_EN" selected>CYPRUS_EN (пилот)</option>
+              <option value="RU_CIS">RU_CIS (теги/ручной импорт)</option>
+            </select>
+          </div>
+          <div>
+            <div class="muted" style="font-size:12px;margin-bottom:4px;">Лимит лидов за запуск</div>
+            <input id="autoLeadLimit" class="input" type="number" min="5" max="300" value="40" />
+          </div>
+          <div>
+            <div class="muted" style="font-size:12px;margin-bottom:4px;">Страниц Cyprus eProcurement</div>
+            <input id="autoCyprusPages" class="input" type="number" min="1" max="25" value="5" />
+          </div>
+          <div>
+            <div class="muted" style="font-size:12px;margin-bottom:4px;">Детальных карточек на источник</div>
+            <input id="autoDetailProbeCount" class="input" type="number" min="0" max="80" value="10" />
+          </div>
+          <div>
+            <div class="muted" style="font-size:12px;margin-bottom:4px;">Интервал автосбора (мин)</div>
+            <input id="autoLeadIntervalMin" class="input" type="number" min="10" max="1440" value="180" />
+          </div>
+          <div>
+            <div class="muted" style="font-size:12px;margin-bottom:4px;">Goszakup API token (опц.)</div>
+            <input id="autoGoszakupToken" class="input" type="password" placeholder="access token для KZ API" />
+          </div>
+        </div>
+
+        <label class="check" style="margin-top:10px;">
+          <input type="checkbox" id="autoDeepParse" checked />
+          <span>Глубокий парсинг detail-страниц (поиск email/телефона/TG)</span>
+        </label>
+
+        <label class="check" style="margin-top:6px;">
+          <input type="checkbox" id="autoLeadEnabled" />
+          <span>Автосбор по таймеру (работает пока открыта эта вкладка)</span>
+        </label>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <button class="btn" type="button" id="autoCollectNowBtn">Собрать и импортировать</button>
+          <button class="btn btn--ghost" type="button" id="autoDiagnoseBtn">Диагностика источников</button>
+          <button class="btn btn--ghost" type="button" id="autoDownloadDiagBtn">Скачать диагностику</button>
+          <button class="btn btn--ghost" type="button" id="autoLoadCacheBtn">Показать кэш лидов</button>
+          <button class="btn btn--ghost" type="button" id="autoResetBtn">Сбросить автопоиск</button>
+        </div>
+
+        <div id="autoLeadStatus" class="muted" style="margin-top:8px"></div>
+        <div id="autoSourceReport" style="margin-top:8px"></div>
+        <div id="autoLeadCohorts" style="margin-top:8px"></div>
+        <div id="autoLeadPreview" style="margin-top:10px"></div>
       </div>
     </section>
 
@@ -390,6 +485,33 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
           <option value="trade">Торговля</option>
           <option value="other">Другое</option>
         </select>
+        <select class="select" id="geoSel">
+          <option value="all">Все гео-базы</option>
+          <option value="CYPRUS_EN">CYPRUS_EN</option>
+          <option value="RU_CIS">RU_CIS</option>
+        </select>
+        <select class="select" id="workspaceSel">
+          <option value="all">Все воркспейсы</option>
+          <option value="manual">Ручной</option>
+          <option value="auto">Авто</option>
+        </select>
+        <select class="select" id="sourceSel" multiple size="7" style="min-width:180px;">
+          <option value="all" selected>Все источники</option>
+          <option value="ted">TED</option>
+          <option value="cyprus_eprocurement">Cyprus eProcurement</option>
+          <option value="zakupki_gov_ru">Zakupki.gov.ru</option>
+          <option value="goszakup_gov_kz">Goszakup.gov.kz</option>
+          <option value="icetrade_by">Icetrade.by</option>
+          <option value="manual">Ручной импорт</option>
+        </select>
+        <select class="select" id="contactCohortSel">
+          <option value="all">Все контакты</option>
+          <option value="email_ready">Email-ready</option>
+          <option value="email_plus_alt">Email + альт-контакты</option>
+          <option value="alt_contact_ready">Без Email, но есть телефон / WhatsApp / TG</option>
+          <option value="no_contacts">Нет контактов</option>
+        </select>
+        <span class="muted" style="font-size:11px;">Можно выбрать несколько (Cmd/Ctrl + клик).</span>
         <select class="select" id="followupSel">
           <option value="all">Все задачи</option>
           <option value="due">Только follow-up к действию</option>
@@ -403,11 +525,16 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
 
         <span class="badgeCount">Выбрано: <b id="selectedCount">0</b></span>
         <button class="btn btn--ghost" type="button" id="selectAllBtn">Выбрать все</button>
+        <button class="btn btn--ghost" type="button" id="selectEmailReadyBtn">Выбрать Email-ready</button>
+        <button class="btn btn--ghost" type="button" id="selectAltContactBtn">Выбрать без Email (телефон / WA / TG)</button>
         <button class="btn btn--danger" type="button" id="clearSelectionBtn">Снять выбор</button>
         <button class="btn btn--danger" type="button" id="deleteSelectedBtn">Удалить выбранные</button>
         <button class="btn btn--danger" type="button" id="deleteAllBtn">Удалить все</button>
         <button class="btn btn--ghost" type="button" id="exportSelectedExcel">Экспорт выбранных Excel</button>
         <button class="btn btn--ghost" type="button" id="exportSelectedCsv">Экспорт выбранных CSV</button>
+        <button class="btn btn--ghost" type="button" id="exportEmailReadyCsvBtn">Экспорт Email-ready CSV</button>
+        <button class="btn btn--ghost" type="button" id="exportAltContactCsvBtn">Экспорт телефон / WA / TG CSV</button>
+        <button class="btn btn--ghost" type="button" id="exportNoContactsCsvBtn">Экспорт no-contacts CSV</button>
       </form>
 
       <div class="panel" id="kpiPanel" style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
@@ -451,15 +578,57 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
           <span id="sendModeHint" class="muted" style="font-size:12px">Режим: сообщение</span>
         </div>
 
+        <div class="panel panel--note" style="margin-top:12px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <div class="muted">Автовыбор языка письма и проверка карточек</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:8px;">
+            <div>
+              <div class="muted" style="font-size:12px;margin-bottom:4px;">Режим шаблона</div>
+              <select id="templateLocaleMode" class="select">
+                <option value="auto" selected>Авто (по гео/языку карточки)</option>
+                <option value="ru">Только RU</option>
+                <option value="en">Только EN</option>
+              </select>
+            </div>
+            <div>
+              <div class="muted" style="font-size:12px;margin-bottom:4px;">Тема письма EN</div>
+              <input id="smtpSubjectTplEn" class="input" placeholder="China sourcing proposal - {company_name}" />
+            </div>
+          </div>
+          <label class="check" style="margin-top:8px;">
+            <input type="checkbox" id="emailOnlyComplete" checked />
+            <span>Отправлять только полные карточки (email + компания + объект закупки)</span>
+          </label>
+          <label class="check" style="margin-top:6px;">
+            <input type="checkbox" id="emailRequireSourceLink" />
+            <span>Требовать ссылку на источник перед отправкой</span>
+          </label>
+          <details style="margin-top:8px;">
+            <summary class="muted" style="cursor:pointer;">EN шаблоны</summary>
+            <div style="margin-top:8px;">
+              <label class="muted">Текст сообщения EN</label>
+              <textarea id="msgTemplateEn" rows="6" style="width:100%; margin-top:6px;"></textarea>
+            </div>
+            <div style="margin-top:8px;">
+              <label class="muted">HTML шаблон письма EN</label>
+              <textarea id="htmlTemplateEditorEn" rows="10" style="width:100%; margin-top:6px;"></textarea>
+            </div>
+          </details>
+        </div>
+
         <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;">
           <button id="saveTemplateBtn" class="btn" type="button">Сохранить</button>
           <button id="resetHtmlTemplateBtn" class="btn btn--ghost" type="button">Сбросить HTML шаблон</button>
           <button id="checkEmailLimitBtn" class="btn btn--ghost" type="button">Проверить лимит Email</button>
           <button id="sendEmailSelectedBtn" class="btn" type="button">Отправить Email выбранным</button>
+          <button id="keepEmailEligibleBtn" class="btn btn--ghost" type="button">Оставить только email-готовые</button>
+          <button id="openManualQueueBtn" class="btn btn--ghost" type="button">В ручную очередь без Email</button>
           <button id="exportMsgCsvBtn" class="btn" type="button">Скачать CSV (сообщения для выбранных)</button>
           <button id="exportMsgXlsBtn" class="btn" type="button">Скачать Excel (сообщения для выбранных)</button>
           <span id="selCountMsg" class="muted"></span>
         </div>
+        <div id="selectedEmailStats" class="panel panel--note" style="margin-top:12px;"></div>
 
         <div class="panel panel--note" style="margin-top:12px">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
@@ -478,6 +647,10 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
             <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Окно отправки: с (час)</div><input id="smtpWindowStart" class="input" type="number" min="0" max="23" value="9" /></div>
             <div><div class="muted" style="font-size:12px;margin-bottom:4px;">Окно отправки: до (час)</div><input id="smtpWindowEnd" class="input" type="number" min="0" max="23" value="20" /></div>
           </div>
+          <label class="check" style="margin-top:8px;">
+            <input type="checkbox" id="smtpRememberPass" />
+            <span>Сохранять App Password в браузере на этом устройстве</span>
+          </label>
           <div class="muted" style="margin-top:8px">A/B темы: укажите варианты через <b>||</b>, например: Вариант A || Вариант B</div>
           <div class="muted" id="emailLimitHint" style="margin-top:8px"></div>
         </div>
@@ -496,6 +669,12 @@ code{background:#0f1120;border:1px solid var(--border);padding:2px 6px;border-ra
           <div class="tag" role="button" tabindex="0" data-copy="{address}"><strong>{address}</strong><div class="muted" style="font-size:12px;">Адрес</div></div>
           <div class="tag" role="button" tabindex="0" data-copy="{purchase_object_name}"><strong>{purchase_object_name}</strong><div class="muted" style="font-size:12px;">Название объекта закупки</div></div>
           <div class="tag" role="button" tabindex="0" data-copy="{source_file}"><strong>{source_file}</strong><div class="muted" style="font-size:12px;">Источник</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{geo_bucket}"><strong>{geo_bucket}</strong><div class="muted" style="font-size:12px;">Гео-база</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{language}"><strong>{language}</strong><div class="muted" style="font-size:12px;">Язык карточки</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{deadline}"><strong>{deadline}</strong><div class="muted" style="font-size:12px;">Дедлайн</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{cpv}"><strong>{cpv}</strong><div class="muted" style="font-size:12px;">CPV</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{budget}"><strong>{budget}</strong><div class="muted" style="font-size:12px;">Бюджет</div></div>
+          <div class="tag" role="button" tabindex="0" data-copy="{lead_url}"><strong>{lead_url}</strong><div class="muted" style="font-size:12px;">Ссылка источника</div></div>
         </div>
         <div class="muted" style="margin-top: 10px;">
           Примечание про Telegram: бот не может написать человеку “первым”. Сейчас это режим “подготовки”: вы копируете текст и отправляете вручную.
@@ -641,14 +820,21 @@ const APP = {
   FILTER_KEY: 'sb_filters_v1',
   SEL_KEY: 'sb_selected_ids_v1',
   TEMPLATE_KEY: 'sb_message_template_v1',
+  TEMPLATE_EN_KEY: 'sb_message_template_en_v1',
   TEMPLATE_HTML_KEY: 'sb_message_template_html_v1',
+  TEMPLATE_HTML_EN_KEY: 'sb_message_template_html_en_v1',
+  TEMPLATE_LOCALE_MODE_KEY: 'sb_template_locale_mode_v1',
+  EMAIL_VALIDATE_KEY: 'sb_email_validate_v1',
   SMTP_KEY: 'sb_smtp_settings_v1',
+  SMTP_PASS_SESSION_KEY: 'sb_smtp_pass_session_v1',
   QUEUE_POS_KEY: 'sb_queue_pos_v1',
   IMPORT_REPORT_KEY: 'sb_last_import_report_v1',
   EMAIL_LOG_KEY: 'sb_email_send_log_v1',
   CAMPAIGN_KEY: 'sb_campaign_settings_v1',
   SUPPRESSION_KEY: 'sb_suppression_list_v1',
   SEND_MODE_KEY: 'sb_send_mode_v1',
+  LEAD_COLLECT_SETTINGS_KEY: 'sb_lead_collect_settings_v1',
+  LEAD_COLLECT_LAST_KEY: 'sb_lead_collect_last_v1',
   DB_EXPORT_VERSION: 1,
 };
 
@@ -657,7 +843,7 @@ const STATUS_LIST = [
   'followup_3d','followup_7d','not_relevant','no_answer','ignore','ok'
 ];
 const MAX_PAGES = 25;
-const BRAND_LOGO_URL = 'https://raw.githubusercontent.com/Brokenbass90/filter-tool/main/strong-bridge-tight-white.png';
+const BRAND_LOGO_URL = './strong-bridge-tight-white.png';
 
 function daysFromNow(days) {
   const d = new Date();
@@ -674,23 +860,85 @@ function segmentSupplier(s) {
   return 'other';
 }
 
+function contactChannelsForSupplier(s) {
+  const out = [];
+  if (isValidEmailAddress(s && s.email)) out.push('email');
+  if (String((s && s.phone_e164) || '').trim()) out.push('phone');
+  if (normalizePhoneForWhatsApp(s && s.phone_e164)) out.push('whatsapp');
+  if (String((s && s.telegram_username) || '').trim()) out.push('telegram');
+  return out;
+}
+
+function contactCohortForSupplier(s) {
+  const channels = contactChannelsForSupplier(s);
+  const hasEmail = channels.includes('email');
+  const hasAlt = channels.includes('phone') || channels.includes('whatsapp') || channels.includes('telegram');
+  if (hasEmail && hasAlt) return 'email_plus_alt';
+  if (hasEmail) return 'email_ready';
+  if (hasAlt) return 'alt_contact_ready';
+  return 'no_contacts';
+}
+
+function contactCohortLabel(cohort) {
+  const c = String(cohort || '').trim();
+  if (c === 'email_plus_alt') return 'Email + телефон / WA / TG';
+  if (c === 'email_ready') return 'Email-ready';
+  if (c === 'alt_contact_ready') return 'Телефон / WA / TG без Email';
+  if (c === 'no_contacts') return 'Нет контактов';
+  return c || '—';
+}
+
 function calcLeadScore(s) {
   let score = 0;
-  if (s.email) score += 25;
+  if (isValidEmailAddress(s.email)) score += 25;
   if (s.phone_e164) score += 25;
   if (s.inn) score += 20;
   if (s.address) score += 10;
   if (s.purchase_object_name) score += 10;
   if (s.director_fio) score += 10;
+  if (s.deadline) score += 6;
+  if (s.cpv) score += 4;
+  if (s.budget) score += 4;
   const ageDays = s.extracted_at ? Math.max(0, (Date.now() - new Date(s.extracted_at).getTime()) / (1000 * 60 * 60 * 24)) : 999;
   if (ageDays <= 30) score += 5;
   if (ageDays <= 7) score += 5;
+  const autoScore = Number(s.lead_score_auto || 0);
+  if (Number.isFinite(autoScore) && autoScore > 0) {
+    score = Math.max(score, autoScore);
+  }
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function isCyprusLikeSupplier(raw) {
+  const s = raw || {};
+  const src = String(s.source || '').trim().toLowerCase();
+  if (src === 'cyprus_eprocurement') return true;
+
+  const geo = String(s.geo_bucket || '').trim().toUpperCase();
+  if (geo === 'CYPRUS_EN') return true;
+
+  const countryRaw = String(s.country || s.country_code || s.country_iso || '').trim().toUpperCase();
+  if (countryRaw === 'CY' || countryRaw === 'CYP') return true;
+
+  const addr = String(s.address || '').trim().toUpperCase();
+  if (addr === 'CY' || addr === 'CYP') return true;
+
+  const blob = [s.purchase_object_name, s.company_name, s.source_file, s.reference_no, s.address].join(' ');
+  if (/[\u0370-\u03FF]/.test(blob)) return true;
+  if (/\bcyprus\b/i.test(blob)) return true;
+  return false;
 }
 
 function enrichSupplier(raw) {
   const s = { ...(raw || {}) };
+  const ws = String(s.workspace || '').trim().toLowerCase();
+  s.workspace = (ws === 'manual' || ws === 'auto') ? ws : (String(s.source || '').trim() ? 'auto' : 'manual');
+  let geo = String(s.geo_bucket || '').trim().toUpperCase();
+  if ((!geo || geo === 'RU_CIS') && isCyprusLikeSupplier(s)) geo = 'CYPRUS_EN';
+  if (geo) s.geo_bucket = geo;
   s.segment = segmentSupplier(s);
+  s.contact_channels = contactChannelsForSupplier(s);
+  s.contact_cohort = contactCohortForSupplier(s);
   s.lead_score = calcLeadScore(s);
   if (!s.created_at) s.created_at = s.extracted_at || new Date().toISOString();
   if (!s.status) s.status = 'new';
@@ -763,24 +1011,97 @@ function chooseSubjectVariant(subjectTpl, supplier) {
   return parts[idx];
 }
 
+function getTemplateLocaleMode() {
+  const mode = String(localStorage.getItem(APP.TEMPLATE_LOCALE_MODE_KEY) || 'auto').trim().toLowerCase();
+  if (mode === 'ru' || mode === 'en') return mode;
+  return 'auto';
+}
+
+function detectTemplateLocaleForSupplier(supplier, modeRaw) {
+  const mode = String(modeRaw || getTemplateLocaleMode()).trim().toLowerCase();
+  if (mode === 'ru' || mode === 'en') return mode;
+  const s = supplier || {};
+  const src = String(s.source || '').trim().toLowerCase();
+  const geo = String(s.geo_bucket || '').trim().toUpperCase();
+  const lang = String(s.language || '').trim().toLowerCase();
+  const blob = [s.purchase_object_name, s.company_name, s.address].join(' ');
+  if (src === 'cyprus_eprocurement') return 'en';
+  if (geo === 'CYPRUS_EN') return 'en';
+  if (isCyprusLikeSupplier(s)) return 'en';
+  if (/[\u0370-\u03FF]/.test(blob)) return 'en';
+  if (/^(en|eng|el|ell|gr|gre)$/i.test(lang)) return 'en';
+  return 'ru';
+}
+
 function normalizePhoneForWhatsApp(raw) {
   let d = String(raw || '').replace(/\D/g, '');
   if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
   return d.length >= 10 ? d : '';
 }
 
-function getSavedSmtpSubjectTemplate() {
+function openAppDeepLink(appUrl, webFallbackUrl = '') {
+  const app = String(appUrl || '').trim();
+  const web = String(webFallbackUrl || '').trim();
+  if (!app && !web) return;
+  if (!app) {
+    window.open(web, '_blank', 'noopener');
+    return;
+  }
+
+  let switched = false;
+  let timer = null;
+  const markSwitched = () => {
+    switched = true;
+    if (timer) clearTimeout(timer);
+    window.removeEventListener('blur', markSwitched);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
+  const onVisibility = () => {
+    if (document.hidden) markSwitched();
+  };
+
+  window.addEventListener('blur', markSwitched, { once: true });
+  document.addEventListener('visibilitychange', onVisibility, { once: true });
+
+  try {
+    const a = document.createElement('a');
+    a.href = app;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (_) {
+    try { window.location.href = app; } catch (_) {}
+  }
+
+  timer = window.setTimeout(() => {
+    if (switched) return;
+    markSwitched();
+    if (web) window.open(web, '_blank', 'noopener');
+  }, 900);
+}
+
+function getSavedSmtpSubjectTemplate(supplier = null) {
   try {
     const smtp = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
-    return String(smtp.subjectTpl || '').trim() || 'Предложение по поставкам из Китая — {company_name}';
+    const locale = detectTemplateLocaleForSupplier(supplier, getTemplateLocaleMode());
+    if (locale === 'en') {
+      return String(smtp.subjectTplEn || '').trim() || DEFAULT_SMTP_SUBJECT_EN;
+    }
+    return String(smtp.subjectTpl || '').trim() || DEFAULT_SMTP_SUBJECT_RU;
   } catch (_) {
-    return 'Предложение по поставкам из Китая — {company_name}';
+    return detectTemplateLocaleForSupplier(supplier, getTemplateLocaleMode()) === 'en'
+      ? DEFAULT_SMTP_SUBJECT_EN
+      : DEFAULT_SMTP_SUBJECT_RU;
   }
 }
 
 function renderContactButtons(s, mini = false) {
   const cls = mini ? 'btn btn--ghost btn--mini' : 'btn btn--ghost';
   const out = [];
+  if (String(s.phone_e164 || '').trim()) {
+    out.push(`<button class="${cls}" type="button" data-call-msg data-id="${s.id}" title="Открыть звонок и скопировать номер">Phone</button>`);
+  }
   if (normalizePhoneForWhatsApp(s.phone_e164)) {
     out.push(`<button class="${cls} btn--wa" type="button" data-wa-msg data-id="${s.id}" title="Открыть WhatsApp">WhatsApp</button>`);
   }
@@ -803,7 +1124,7 @@ function openMailPreview(s) {
   if (title) {
     title.textContent = `HTML-письмо: ${buildDisplayName(s) || s.company_name || ('ID ' + s.id)}`;
   }
-  frame.srcdoc = renderTemplate(getEmailHtmlTemplate(), s);
+  frame.srcdoc = renderTemplate(getEmailHtmlTemplateForSupplier(s), s);
   modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
 }
@@ -817,20 +1138,30 @@ function closeMailPreview() {
   if (frame) frame.srcdoc = '';
 }
 
-function getEmailHtmlTemplate() {
+function getEmailHtmlTemplate(locale = 'ru') {
+  const lc = String(locale || 'ru').trim().toLowerCase();
   try {
+    if (lc === 'en') {
+      const savedEn = String(localStorage.getItem(APP.TEMPLATE_HTML_EN_KEY) || '').trim();
+      return savedEn || DEFAULT_EMAIL_HTML_TEMPLATE_EN;
+    }
     const saved = String(localStorage.getItem(APP.TEMPLATE_HTML_KEY) || '').trim();
     return saved || DEFAULT_EMAIL_HTML_TEMPLATE;
   } catch (_) {
-    return DEFAULT_EMAIL_HTML_TEMPLATE;
+    return lc === 'en' ? DEFAULT_EMAIL_HTML_TEMPLATE_EN : DEFAULT_EMAIL_HTML_TEMPLATE;
   }
+}
+
+function getEmailHtmlTemplateForSupplier(supplier) {
+  const locale = detectTemplateLocaleForSupplier(supplier, getTemplateLocaleMode());
+  return getEmailHtmlTemplate(locale);
 }
 
 async function sendBatchViaHelper({ smtp, messages }) {
   const base = ocrHelperBase();
   const r = await fetch(base + '/email/send-batch', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-SB-Client': 'vadim-filter-tool' },
     body: JSON.stringify({
       smtp: {
         user: smtp.user,
@@ -850,17 +1181,298 @@ async function sendBatchViaHelper({ smtp, messages }) {
   return j;
 }
 
+async function collectLeadsViaHelper(payload) {
+  const base = ocrHelperBase();
+  const r = await fetch(base + '/leads/collect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-SB-Client': 'vadim-filter-tool' },
+    body: JSON.stringify(payload || {})
+  });
+  const j = await r.json();
+  if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'lead_collect_failed');
+  return j;
+}
+
+async function diagnoseLeadsViaHelper(payload) {
+  const base = ocrHelperBase();
+  const r = await fetch(base + '/leads/diagnose', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-SB-Client': 'vadim-filter-tool' },
+    body: JSON.stringify(payload || {})
+  });
+  const j = await r.json();
+  if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'lead_diagnose_failed');
+  return j;
+}
+
+async function fetchSupportDiagnosticsViaHelper() {
+  const base = ocrHelperBase();
+  const r = await fetch(base + '/support/diagnostics', {
+    headers: { 'X-SB-Client': 'vadim-filter-tool' }
+  });
+  const j = await r.json();
+  if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'support_diagnostics_failed');
+  return j;
+}
+
+async function clearLeadCacheViaHelper({ metaOnly = false } = {}) {
+  const base = ocrHelperBase();
+  const r = await fetch(base + '/leads/clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-SB-Client': 'vadim-filter-tool' },
+    body: JSON.stringify({ metaOnly: !!metaOnly })
+  });
+  const j = await r.json();
+  if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'lead_clear_failed');
+  return j;
+}
+
+async function listLeadsViaHelper({ limit = 60, geoBucket = '', sources = [] } = {}) {
+  const base = ocrHelperBase();
+  const qs = new URLSearchParams();
+  qs.set('limit', String(limit));
+  if (geoBucket) qs.set('geoBucket', geoBucket);
+  if (Array.isArray(sources) && sources.length) qs.set('sources', sources.join(','));
+  const r = await fetch(base + '/leads/list?' + qs.toString(), {
+    headers: { 'X-SB-Client': 'vadim-filter-tool' }
+  });
+  const j = await r.json();
+  if (!r.ok || !j || !j.ok) throw new Error((j && j.error) ? j.error : 'lead_list_failed');
+  return j;
+}
+
+async function clearAutoWorkspaceCards() {
+  const rows = (await store.getAll()).map(enrichSupplier);
+  const ids = rows
+    .filter((s) => String(s.workspace || '').trim().toLowerCase() === 'auto')
+    .map((s) => Number(s.id))
+    .filter(Number.isFinite);
+  if (ids.length) await store.deleteByIds(ids);
+  return ids.length;
+}
+
+function defaultTedQueryForGeo(geoBucket, tedRuOnly = false) {
+  const g = String(geoBucket || '').trim().toUpperCase();
+  if (g === 'RU_CIS') {
+    if (tedRuOnly) return '(buyer-country in (RUS))';
+    return '((buyer-country in (RUS)) OR (buyer-country in (KAZ)) OR (buyer-country in (UZB)) OR (buyer-country in (KGZ)) OR (buyer-country in (ARM)) OR (buyer-country in (AZE)) OR (buyer-country in (TJK)) OR (buyer-country in (TKM)) OR (buyer-country in (MDA)) OR (buyer-country in (BLR)))';
+  }
+  return '(buyer-country in (CYP))';
+}
+
+function loadLeadCollectSettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(APP.LEAD_COLLECT_SETTINGS_KEY) || '{}') || {};
+    return {
+      enabled: !!raw.enabled,
+      intervalMin: Number.isFinite(Number(raw.intervalMin)) ? Math.max(10, Math.min(1440, Number(raw.intervalMin))) : 180,
+      geoBucket: String(raw.geoBucket || 'CYPRUS_EN'),
+      limit: Number.isFinite(Number(raw.limit)) ? Math.max(5, Math.min(300, Number(raw.limit))) : 40,
+      cyprusPages: Number.isFinite(Number(raw.cyprusPages)) ? Math.max(1, Math.min(25, Number(raw.cyprusPages))) : 5,
+      deepParse: raw.deepParse !== false,
+      detailProbeCount: Number.isFinite(Number(raw.detailProbeCount)) ? Math.max(0, Math.min(80, Number(raw.detailProbeCount))) : 10,
+      goszakupToken: String(raw.goszakupToken || ''),
+      tedRuOnly: !!raw.tedRuOnly,
+      sources: Array.isArray(raw.sources) ? raw.sources.map(x => String(x || '').trim()).filter(Boolean) : ['ted', 'cyprus_eprocurement']
+    };
+  } catch (_) {
+    return { enabled: false, intervalMin: 180, geoBucket: 'CYPRUS_EN', limit: 40, cyprusPages: 5, deepParse: true, detailProbeCount: 10, goszakupToken: '', tedRuOnly: false, sources: ['ted', 'cyprus_eprocurement'] };
+  }
+}
+
+function saveLeadCollectSettings(st) {
+  try {
+    localStorage.setItem(APP.LEAD_COLLECT_SETTINGS_KEY, JSON.stringify(st || {}));
+  } catch (_) {}
+}
+
+function formatBudgetDisplay(v, cur) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const c = String(cur || '').trim() || 'EUR';
+  try {
+    return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(n) + ' ' + c;
+  } catch (_) {
+    return String(Math.round(n)) + ' ' + c;
+  }
+}
+
+function sourceUrlFromSupplier(s) {
+  const url = String((s && s.lead_url) || '').trim();
+  if (url) return url;
+  const src = String((s && s.source) || '').trim();
+  const uid = String((s && s.source_uid) || '').trim();
+  if (src === 'ted') {
+    const m = uid.match(/^ted:(.+)$/i);
+    if (m && m[1]) return `https://ted.europa.eu/en/notice/-/detail/${encodeURIComponent(m[1])}`;
+  }
+  if (src === 'cyprus_eprocurement') {
+    const m = uid.match(/^cyprus_eprocurement:(\\d+)$/i);
+    if (m && m[1]) return `https://www.eprocurement.gov.cy/epps/cft/prepareViewCfTWS.do?resourceId=${encodeURIComponent(m[1])}`;
+  }
+  if (src === 'zakupki_gov_ru') {
+    const m = uid.match(/^zakupki_gov_ru:([A-Za-z0-9-]+)/i);
+    if (m && m[1]) {
+      return `https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber=${encodeURIComponent(m[1])}`;
+    }
+  }
+  if (src === 'goszakup_gov_kz') {
+    const m = uid.match(/^goszakup_gov_kz:([A-Za-z0-9-]+)/i);
+    if (m && m[1]) {
+      return `https://goszakup.gov.kz/ru/announce/index/${encodeURIComponent(m[1])}`;
+    }
+  }
+  if (src === 'icetrade_by') {
+    const m = uid.match(/^icetrade_by:(\d+)/i);
+    if (m && m[1]) {
+      return `https://www.icetrade.by/tenders/all/view/${encodeURIComponent(m[1])}`;
+    }
+  }
+  return '';
+}
+
+function normalizeLeadToSupplier(lead) {
+  const l = lead || {};
+  const src = String(l.source || '').trim();
+  const srcId = String(l.source_id || '').trim();
+  const uid = String(l.source_uid || (src && srcId ? `${src}:${srcId}` : '')).trim();
+  const budgetNum = Number(l.budget_value);
+  const budget = Number.isFinite(budgetNum) ? String(Math.round(budgetNum)) : '';
+  const cpv = Array.isArray(l.cpv_codes) && l.cpv_codes.length
+    ? String(l.cpv_codes[0] || '').trim()
+    : String(l.cpv_main || '').trim();
+  const companyName = String(l.buyer_name || l.contact_name || '').trim();
+  const contactName = String(l.contact_name || l.buyer_name || '').trim();
+  const email = String(l.contact_email || l.email || '').trim().toLowerCase();
+  let geoBucket = String(l.geo_bucket || '').trim();
+  const countryCode = String(l.country || l.region || '').trim().toUpperCase();
+  if (geoBucket === 'RU_CIS' && (src === 'cyprus_eprocurement' || countryCode === 'CY' || countryCode === 'CYP')) {
+    geoBucket = 'CYPRUS_EN';
+  }
+  const phone = String(l.contact_phone || l.phone || '').replace(/\s+/g, ' ').trim();
+  const tgRaw = String(l.contact_telegram || l.telegram_username || '').trim();
+  const tgUrl = tgRaw.match(/(?:https?:\/\/)?t\.me\/([A-Za-z0-9_]{5,32})/i);
+  const tgAt = tgRaw.match(/(?:^|[\s,(])@([A-Za-z0-9_]{5,32})(?:\b|$)/);
+  const telegramUsername = tgAt && tgAt[1]
+    ? tgAt[1]
+    : (tgUrl && tgUrl[1] ? tgUrl[1] : (/^[A-Za-z0-9_]{5,32}$/.test(tgRaw) ? tgRaw : ''));
+
+  return {
+    company_name: companyName || `${(src || 'lead').toUpperCase()} ${srcId}`.trim(),
+    ip: '',
+    supplier_fio: '',
+    director_fio: contactName,
+    phone_e164: phone,
+    email,
+    inn: '',
+    address: String(l.region || l.country || '').trim(),
+    purchase_object_name: String(l.title || '').trim(),
+    source_file: String(l.source_file || `${(src || 'lead').toUpperCase()} ${srcId}`.trim()),
+    source_uid: uid,
+    source: src,
+    workspace: 'auto',
+    geo_bucket: geoBucket,
+    country_code: countryCode,
+    language: String(l.language || '').trim(),
+    deadline: String(l.deadline || l.deadline_raw || '').trim(),
+    cpv,
+    budget,
+    budget_currency: String(l.budget_currency || '').trim(),
+    lead_url: String(l.url || '').trim(),
+    lead_kind: 'tender',
+    telegram_username: telegramUsername,
+    lead_score_auto: Number.isFinite(Number(l.score)) ? Number(l.score) : 0,
+    procedure_type: String(l.procedure || '').trim(),
+    ext_status: String(l.status || '').trim(),
+    reference_no: String(l.reference_no || '').trim()
+  };
+}
+
+function previewLeadRows(leads) {
+  return (Array.isArray(leads) ? leads : []).map((lead) => enrichSupplier(normalizeLeadToSupplier(lead)));
+}
+
+function summarizeLeadCohorts(rows) {
+  const arr = Array.isArray(rows) ? rows : [];
+  const out = {
+    total: arr.length,
+    email_plus_alt: 0,
+    email_ready: 0,
+    alt_contact_ready: 0,
+    no_contacts: 0,
+    email_any: 0,
+    phone_any: 0,
+    telegram_any: 0,
+    whatsapp_any: 0,
+  };
+  arr.forEach((row) => {
+    const cohort = String((row && row.contact_cohort) || '').trim();
+    if (Object.prototype.hasOwnProperty.call(out, cohort)) out[cohort] += 1;
+    const channels = Array.isArray(row && row.contact_channels) ? row.contact_channels : [];
+    if (channels.includes('email')) out.email_any += 1;
+    if (channels.includes('phone')) out.phone_any += 1;
+    if (channels.includes('telegram')) out.telegram_any += 1;
+    if (channels.includes('whatsapp')) out.whatsapp_any += 1;
+  });
+  return out;
+}
+
+function renderLeadPreviewHtml(leads) {
+  const rows = previewLeadRows(leads).slice(0, 20).map((s) => {
+    const title = escapeHtml(String(s.purchase_object_name || ''));
+    const buyer = escapeHtml(String(s.company_name || ''));
+    const source = escapeHtml(String(s.source || ''));
+    const score = Number.isFinite(Number(s.lead_score_auto || s.lead_score)) ? Math.round(Number(s.lead_score_auto || s.lead_score)) : 0;
+    const deadline = escapeHtml(String(s.deadline || '').slice(0, 25));
+    const cpv = escapeHtml(String(s.cpv || ''));
+    const budget = escapeHtml(formatBudgetDisplay(s.budget, s.budget_currency));
+    const emailRaw = String(s.email || '').trim();
+    const phoneRaw = String(s.phone_e164 || '').trim();
+    const tgRaw = String(s.telegram_username || '').trim();
+    const contacts = [emailRaw, phoneRaw, tgRaw ? `@${tgRaw.replace(/^@/, '')}` : ''].filter(Boolean).join(' | ');
+    const contactCell = escapeHtml(contacts) || '—';
+    const cohort = escapeHtml(contactCohortLabel(s.contact_cohort));
+    const url = String(s.lead_url || '').trim();
+    const link = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Открыть</a>` : '—';
+    return `<tr><td>${source}</td><td>${score}</td><td>${deadline}</td><td>${cpv}</td><td>${budget}</td><td>${buyer}</td><td>${contactCell}</td><td>${cohort}</td><td>${title}</td><td>${link}</td></tr>`;
+  }).join('');
+  if (!rows) return '<div class="muted">Лиды не найдены.</div>';
+  return `<div class="tablewrap"><table class="table"><thead><tr><th>Источник</th><th>Скоринг</th><th>Дедлайн</th><th>CPV</th><th>Бюджет</th><th>Заказчик</th><th>Контакты</th><th>Когорта</th><th>Тендер</th><th>Ссылка</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+const DEFAULT_SMTP_SUBJECT_RU = 'Предложение по поставкам из Китая - {company_name}';
+const DEFAULT_SMTP_SUBJECT_EN = 'China sourcing proposal - {company_name}';
+
 const DEFAULT_TEMPLATE = `Здравствуйте! Мы занимаемся поставками из Китая под заказ (поиск, проверка, закупка, доставка).
 
 Подскажите, актуальны ли для вас поставки в ближайший месяц?
 
 Компания: {company_name}
-ИНН: {inn}
-Контакт: {director_fio}
-Телефон: {phone}
-Email: {email}
+Контакт/подразделение: {director_fio}
+Объект закупки: {purchase_object_name}
+Дедлайн: {deadline}
+Бюджет: {budget}
+Источник: {source_file}
+Ссылка на закупку: {lead_url}
 
 Если да — что именно нужно и куда доставлять (город/страна)?`;
+
+const DEFAULT_TEMPLATE_EN = `Hello! We support import sourcing from China end-to-end (factory search, due diligence, purchasing, logistics).
+
+Would cooperation on sourcing be relevant for your company this month?
+
+Company: {company_name}
+Contact: {director_fio}
+Tender/Need: {purchase_object_name}
+Deadline: {deadline}
+Budget: {budget}
+Source: {source_file}
+Tender link: {lead_url}
+
+If relevant, please share:
+1) product category,
+2) expected volume/frequency,
+3) delivery city/country.`;
 
 
 const DEFAULT_EMAIL_HTML_TEMPLATE = `<html><body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,sans-serif;color:#0e1b2c;">
@@ -870,7 +1482,7 @@ const DEFAULT_EMAIL_HTML_TEMPLATE = `<html><body style="margin:0;padding:0;backg
         <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6ecf5;">
           <tr>
             <td style="padding:18px 22px;background:#0f172a;color:#ffffff;">
-              <img src="${BRAND_LOGO_URL}" alt="Strong Bridge" width="160" style="width:160px;max-width:100%;height:auto;display:block;margin-bottom:10px;" />
+              <img src="cid:brandlogo@sb" alt="Strong Bridge" width="160" style="width:160px;max-width:100%;height:auto;display:block;margin-bottom:10px;" />
               <div style="font-size:20px;font-weight:700;line-height:1.3;">Поставки из Китая под ваш проект</div>
             </td>
           </tr>
@@ -884,8 +1496,12 @@ const DEFAULT_EMAIL_HTML_TEMPLATE = `<html><body style="margin:0;padding:0;backg
                 <tr><td style="padding:8px 12px;color:#5b6b84;">Контакт</td><td style="padding:8px 12px;">{director_fio}</td></tr>
                 <tr><td style="padding:8px 12px;color:#5b6b84;">Телефон</td><td style="padding:8px 12px;">{phone}</td></tr>
                 <tr><td style="padding:8px 12px;color:#5b6b84;">Email</td><td style="padding:8px 12px;">{email}</td></tr>
-                <tr><td style="padding:8px 12px;color:#5b6b84;">ИНН</td><td style="padding:8px 12px;">{inn}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Объект</td><td style="padding:8px 12px;">{purchase_object_name}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Дедлайн</td><td style="padding:8px 12px;">{deadline}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Бюджет</td><td style="padding:8px 12px;">{budget}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Источник</td><td style="padding:8px 12px;">{source_file}</td></tr>
               </table>
+              <p style="margin:12px 0 0 0;"><a href="{lead_url}" style="color:#0f172a;">Открыть карточку закупки</a></p>
               <p style="margin:16px 0 8px 0;">Если удобно, ответьте на 3 вопроса:</p>
               <ol style="margin:0 0 16px 18px;padding:0;">
                 <li>Какие товары интересуют?</li>
@@ -915,6 +1531,51 @@ const DEFAULT_EMAIL_HTML_TEMPLATE = `<html><body style="margin:0;padding:0;backg
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body></html>`;
+
+const DEFAULT_EMAIL_HTML_TEMPLATE_EN = `<html><body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,sans-serif;color:#0e1b2c;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f6fb;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6ecf5;">
+          <tr>
+            <td style="padding:18px 22px;background:#0f172a;color:#ffffff;">
+              <img src="cid:brandlogo@sb" alt="Strong Bridge" width="160" style="width:160px;max-width:100%;height:auto;display:block;margin-bottom:10px;" />
+              <div style="font-size:20px;font-weight:700;line-height:1.3;">China sourcing for your project</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px;line-height:1.6;font-size:15px;">
+              <p style="margin:0 0 12px 0;">Hello, <b>{company_name}</b>!</p>
+              <p style="margin:0 0 12px 0;">We help companies source from China: supplier search, verification, purchasing, logistics and delivery control.</p>
+              <p style="margin:0 0 14px 0;">Would this be relevant for your company this month?</p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:14px;background:#f8fbff;border:1px solid #dbe7f5;border-radius:10px;">
+                <tr><td style="padding:8px 12px;width:170px;color:#5b6b84;">Company</td><td style="padding:8px 12px;"><b>{company_name}</b></td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Contact</td><td style="padding:8px 12px;">{director_fio}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Phone</td><td style="padding:8px 12px;">{phone}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Email</td><td style="padding:8px 12px;">{email}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Tender/Need</td><td style="padding:8px 12px;">{purchase_object_name}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Deadline</td><td style="padding:8px 12px;">{deadline}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Budget</td><td style="padding:8px 12px;">{budget}</td></tr>
+                <tr><td style="padding:8px 12px;color:#5b6b84;">Source</td><td style="padding:8px 12px;">{source_file}</td></tr>
+              </table>
+              <p style="margin:12px 0 0 0;"><a href="{lead_url}" style="color:#0f172a;">Open tender source</a></p>
+              <p style="margin:16px 0 8px 0;">If interesting, please reply with:</p>
+              <ol style="margin:0 0 16px 18px;padding:0;">
+                <li>Products you need,</li>
+                <li>Expected volume/frequency,</li>
+                <li>Delivery city/country.</li>
+              </ol>
+              <p style="margin:0;">Best regards,<br><b>Strong Bridge</b></p>
+              <p style="margin:14px 0 10px 0;">
+                <a href="mailto:strongbridgeinfo@gmail.com" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 14px;border-radius:8px;font-size:14px;">Reply by email</a>
+              </p>
             </td>
           </tr>
         </table>
@@ -992,7 +1653,7 @@ class SupplierStore {
     try {
       if (!('indexedDB' in window)) throw new Error('indexedDB not available');
       this.db = await new Promise((resolve, reject) => {
-        const req = indexedDB.open('vadim-filter-tool-db', 1);
+        const req = indexedDB.open('vadim-filter-tool-db', 2);
         req.onupgradeneeded = () => {
           const db = req.result;
           if (!db.objectStoreNames.contains('suppliers')) {
@@ -1001,6 +1662,13 @@ class SupplierStore {
             store.createIndex('phone_e164', 'phone_e164', { unique: true });
             store.createIndex('status', 'status', { unique: false });
             store.createIndex('extracted_at', 'extracted_at', { unique: false });
+            store.createIndex('source_uid', 'source_uid', { unique: true });
+          } else {
+            const tx = req.transaction;
+            const store = tx && tx.objectStore ? tx.objectStore('suppliers') : null;
+            if (store && !store.indexNames.contains('source_uid')) {
+              store.createIndex('source_uid', 'source_uid', { unique: true });
+            }
           }
         };
         req.onsuccess = () => resolve(req.result);
@@ -1050,17 +1718,39 @@ class SupplierStore {
     return all.filter(x => set.has(Number(x.id)));
   }
 
-  async query({q='', status='', segment='', minScore=0, followupDueOnly=false}) {
+  async query({q='', status='', segment='', minScore=0, followupDueOnly=false, geoBucket='', workspace='', leadSource='', leadSources=[], contactCohort=''}) {
     const all = (await this.getAll()).map(enrichSupplier);
     const qq = (q || '').trim().toLowerCase();
     const st = (status || '').trim();
     const seg = (segment || '').trim();
+    const geo = (geoBucket || '').trim();
+    const ws = String(workspace || '').trim().toLowerCase();
+    const src = (leadSource || '').trim();
+    const srcArrRaw = Array.isArray(leadSources) && leadSources.length
+      ? leadSources
+      : (src ? [src] : []);
+    const srcArr = srcArrRaw
+      .map((x) => String(x || '').trim())
+      .filter((x) => !!x && x !== 'all');
+    const srcSet = srcArr.length ? new Set(srcArr) : null;
+    const cohort = String(contactCohort || '').trim();
     const minSc = Number(minScore || 0);
     const now = Date.now();
     return all
       .filter(s => {
         if (st && s.status !== st) return false;
         if (seg && s.segment !== seg) return false;
+        if (geo && String(s.geo_bucket || '') !== geo) return false;
+        if (ws && ws !== 'all' && String(s.workspace || '').trim().toLowerCase() !== ws) return false;
+        if (srcSet) {
+          const curSource = String(s.source || '').trim();
+          if (srcSet.has('manual') && !curSource) {
+            // pass
+          } else if (!srcSet.has(curSource)) {
+            return false;
+          }
+        }
+        if (cohort && cohort !== 'all' && String(s.contact_cohort || '') !== cohort) return false;
         if (Number.isFinite(minSc) && minSc > 0 && Number(s.lead_score || 0) < minSc) return false;
         if (followupDueOnly) {
           if (!s.followup_at) return false;
@@ -1068,7 +1758,7 @@ class SupplierStore {
           if (!Number.isFinite(due) || due > now) return false;
         }
         if (!qq) return true;
-        const blob = [s.company_name, s.director_fio, s.phone_e164, s.email, s.inn, s.address, s.source_file, s.segment, s.purchase_object_name].join(' ').toLowerCase();
+        const blob = [s.company_name, s.director_fio, s.phone_e164, s.email, s.inn, s.address, s.source_file, s.source, s.workspace, s.geo_bucket, s.cpv, s.segment, s.contact_cohort, (s.contact_channels || []).join(' '), s.purchase_object_name].join(' ').toLowerCase();
         return blob.includes(qq);
       })
       .sort((a,b) => String(b.extracted_at||'').localeCompare(String(a.extracted_at||'')));
@@ -1081,10 +1771,11 @@ class SupplierStore {
       const all = await this._lsLoadAll();
       let inserted = 0, updated = 0;
       for (const s of suppliers) {
+        const bySourceUid = s.source_uid ? all.find(x => String(x.source_uid || '') === String(s.source_uid || '')) : null;
         const byInn = s.inn ? all.find(x => x.inn === s.inn) : null;
         const byPhone = s.phone_e164 ? all.find(x => x.phone_e164 === s.phone_e164) : null;
         const byEmail = s.email ? all.find(x => String(x.email||'').toLowerCase() === String(s.email||'').toLowerCase()) : null;
-        const existing = byInn || byPhone || byEmail;
+        const existing = bySourceUid || byInn || byPhone || byEmail;
         if (existing) {
           existing.company_name = s.company_name;
           existing.director_fio = s.director_fio;
@@ -1094,6 +1785,22 @@ class SupplierStore {
           existing.address = s.address;
           existing.purchase_object_name = s.purchase_object_name || '';
           existing.source_file = s.source_file;
+          existing.source_uid = s.source_uid || existing.source_uid || '';
+          existing.source = s.source || existing.source || '';
+          existing.geo_bucket = s.geo_bucket || existing.geo_bucket || '';
+          existing.language = s.language || existing.language || '';
+          existing.deadline = s.deadline || existing.deadline || '';
+          existing.cpv = s.cpv || existing.cpv || '';
+          existing.budget = s.budget || existing.budget || '';
+          existing.budget_currency = s.budget_currency || existing.budget_currency || '';
+          existing.lead_url = s.lead_url || existing.lead_url || '';
+          existing.lead_kind = s.lead_kind || existing.lead_kind || '';
+          existing.lead_score_auto = Number.isFinite(Number(s.lead_score_auto)) ? Number(s.lead_score_auto) : (Number(existing.lead_score_auto || 0) || 0);
+          existing.procedure_type = s.procedure_type || existing.procedure_type || '';
+          existing.ext_status = s.ext_status || existing.ext_status || '';
+          existing.reference_no = s.reference_no || existing.reference_no || '';
+          existing.telegram_username = s.telegram_username || existing.telegram_username || '';
+          existing.workspace = s.workspace || existing.workspace || (existing.source ? 'auto' : 'manual');
           existing.extracted_at = this._nowIso();
           const enrichedExisting = enrichSupplier(existing);
           Object.assign(existing, enrichedExisting);
@@ -1114,6 +1821,12 @@ class SupplierStore {
     const store = tx.objectStore('suppliers');
     const innIndex = store.index('inn');
     const phoneIndex = store.index('phone_e164');
+    let sourceUidIndex = null;
+    try {
+      sourceUidIndex = store.index('source_uid');
+    } catch (_) {
+      sourceUidIndex = null;
+    }
 
     const p = async () => {
       let inserted = 0, updated = 0;
@@ -1122,6 +1835,11 @@ class SupplierStore {
         if (!s2.phone_e164) delete s2.phone_e164;
         if (!s2.inn) delete s2.inn;
         let existing = await new Promise((resolve) => {
+          if (!sourceUidIndex || !s2.source_uid) return resolve(null);
+          const r0 = sourceUidIndex.get(s2.source_uid);
+          r0.onsuccess = () => resolve(r0.result || null);
+          r0.onerror = () => resolve(null);
+        }) || await new Promise((resolve) => {
           if (!s2.inn) return resolve(null);
           const r1 = innIndex.get(s2.inn);
           r1.onsuccess = () => resolve(r1.result || null);
@@ -1261,7 +1979,7 @@ class SupplierStore {
   }
 
   async exportJson() {
-    const all = await this.getAll();
+    const all = (await this.getAll()).map(enrichSupplier);
     return {
       app: 'vadim-filter-tool',
       version: APP.DB_EXPORT_VERSION,
@@ -1847,6 +2565,7 @@ function tryParseSupplierFromHtmlText(htmlText, sourceFile, opts) {
       purchase_object_name: purchaseObjectName || '',
       telegram_username: telegramUsername || '',
       source_file: sourceFile || '',
+      workspace: 'manual',
     },
     reason: 'ok',
   };
@@ -1905,12 +2624,12 @@ async function readFileAsBytes(file) {
    - Works only for PDF with text layer.
    - For scanned PDFs (images) you need OCR helper (server/app).
 =========================== */
-const PDFJS_CDN_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+const PDFJS_LOCAL_BASE = './vendor/pdfjs/';
 
 function setupPdfJsIfAny(){
   try {
     if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_CDN_BASE + 'pdf.worker.min.js';
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_LOCAL_BASE + 'pdf.worker.min.js';
     }
   } catch(e) {}
 }
@@ -2157,6 +2876,7 @@ function tryParseSupplierFromPlainText(text, fileName, opts){
     address,
     purchase_object_name,
     source_file: fileName || '',
+    workspace: 'manual',
     status: 'new',
     extracted_at: new Date().toISOString(),
     notes: ''
@@ -2232,7 +2952,7 @@ async function unzipHtmlEntries(zipBytes) {
     if (lower.startsWith('__macosx/')) continue;
     const base = name.split('/').pop();
     if (base && base.startsWith('._')) continue;
-    if (!(lower.endsWith('.html') || lower.endsWith('.htm') || lower.endsWith('.zip'))) continue;
+    if (!(lower.endsWith('.html') || lower.endsWith('.htm') || lower.endsWith('.zip') || lower.endsWith('.pdf'))) continue;
     entries.push({ name, method, compSize, lho });
   }
 
@@ -2282,6 +3002,34 @@ function loadFilters() {
 }
 function saveFilters(st) {
   localStorage.setItem(APP.FILTER_KEY, JSON.stringify(st || {}));
+}
+
+function forceWorkspaceFilter(workspace) {
+  const ws = String(workspace || '').trim().toLowerCase();
+  if (ws !== 'manual' && ws !== 'auto') return;
+  const cur = loadFilters();
+  cur.workspace = ws;
+  saveFilters(cur);
+  const sel = document.getElementById('workspaceSel');
+  if (sel) sel.value = ws;
+}
+
+function getMultiSelectValues(sel) {
+  if (!sel) return [];
+  return Array.from(sel.options || [])
+    .filter((opt) => !!opt.selected)
+    .map((opt) => String(opt.value || '').trim())
+    .filter(Boolean);
+}
+
+function setMultiSelectValues(sel, values, fallback = ['all']) {
+  if (!sel) return;
+  const wanted = new Set((Array.isArray(values) ? values : []).map((x) => String(x || '').trim()).filter(Boolean));
+  const useFallback = !wanted.size;
+  const finalSet = useFallback ? new Set(fallback) : wanted;
+  Array.from(sel.options || []).forEach((opt) => {
+    opt.selected = finalSet.has(String(opt.value || '').trim());
+  });
 }
 
 /* ===========================
@@ -2365,6 +3113,33 @@ function downloadXls(rows, filename, title='Sheet1') {
   downloadBlob(new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'}), filename);
 }
 
+function mapSupplierExportRow(s0) {
+  const s = enrichSupplier(s0 || {});
+  return {
+    'Когорта контакта': contactCohortLabel(s.contact_cohort),
+    'Каналы контакта': (s.contact_channels || []).join(', '),
+    'Компания': s.company_name || '',
+    'ИП': s.ip || '',
+    'ФИО поставщика': s.supplier_fio || '',
+    'ФИО руководителя': s.director_fio || '',
+    'Телефон': s.phone_e164 || '',
+    'Email': s.email || '',
+    'ИНН': s.inn || '',
+    'Адрес': s.address || '',
+    'Название объекта закупки': s.purchase_object_name || '',
+    'Источник лида': s.source || '',
+    'Workspace': s.workspace || '',
+    'Гео': s.geo_bucket || '',
+    'Дедлайн': s.deadline || '',
+    'CPV': s.cpv || '',
+    'Бюджет': formatBudgetDisplay(s.budget, s.budget_currency),
+    'Сегмент': s.segment || '',
+    'Скоринг': s.lead_score || 0,
+    'FollowUp': s.followup_at || '',
+    'Заметки': s.notes || '',
+  };
+}
+
 /* ===========================
    Message templating
 =========================== */
@@ -2375,11 +3150,71 @@ function normalizeTemplateText(t) {
     .replace(/\\n/g, '\n');
 }
 
-function getTemplate() {
+function getTemplate(locale = 'ru') {
+  const lc = String(locale || 'ru').trim().toLowerCase();
+  if (lc === 'en') {
+    let tEn = normalizeTemplateText(localStorage.getItem(APP.TEMPLATE_EN_KEY) || '');
+    tEn = tEn.trim();
+    return tEn || DEFAULT_TEMPLATE_EN;
+  }
   let t = normalizeTemplateText(localStorage.getItem(APP.TEMPLATE_KEY) || '');
   t = t.trim();
   return t || DEFAULT_TEMPLATE;
 }
+
+function getTemplateForSupplier(supplier) {
+  const locale = detectTemplateLocaleForSupplier(supplier, getTemplateLocaleMode());
+  return getTemplate(locale);
+}
+
+function getSubjectTemplateForSupplier(supplier, smtpSettings) {
+  const locale = detectTemplateLocaleForSupplier(supplier, getTemplateLocaleMode());
+  const smtp = smtpSettings || {};
+  if (locale === 'en') {
+    return String(smtp.subjectTplEn || '').trim() || DEFAULT_SMTP_SUBJECT_EN;
+  }
+  return String(smtp.subjectTpl || '').trim() || DEFAULT_SMTP_SUBJECT_RU;
+}
+
+function loadEmailValidationSettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(APP.EMAIL_VALIDATE_KEY) || '{}') || {};
+    return {
+      onlyComplete: raw.onlyComplete !== false,
+      requireSourceLink: !!raw.requireSourceLink
+    };
+  } catch (_) {
+    return { onlyComplete: true, requireSourceLink: false };
+  }
+}
+
+function saveEmailValidationSettings(st) {
+  const next = {
+    onlyComplete: !!(st && st.onlyComplete),
+    requireSourceLink: !!(st && st.requireSourceLink)
+  };
+  localStorage.setItem(APP.EMAIL_VALIDATE_KEY, JSON.stringify(next));
+}
+
+function isValidEmailAddress(email) {
+  const e = String(email || '').trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
+function collectCompletenessIssues(supplier, validation) {
+  const s = supplier || {};
+  const cfg = validation || { onlyComplete: true, requireSourceLink: false };
+  const issues = [];
+  if (!isValidEmailAddress(s.email)) issues.push('email');
+  if (!String(s.company_name || '').trim()) issues.push('company_name');
+  if (!String(s.purchase_object_name || '').trim()) issues.push('purchase_object_name');
+  if (cfg.requireSourceLink) {
+    const link = String(sourceUrlFromSupplier(s) || s.lead_url || '').trim();
+    if (!link) issues.push('source_link');
+  }
+  return issues;
+}
+
 function renderTemplate(tpl, s) {
   let out = tpl || '';
   const map = {
@@ -2393,6 +3228,12 @@ function renderTemplate(tpl, s) {
     '{address}': s.address || '',
     '{purchase_object_name}': s.purchase_object_name || '',
     '{source_file}': s.source_file || '',
+    '{geo_bucket}': s.geo_bucket || '',
+    '{language}': s.language || '',
+    '{deadline}': s.deadline || '',
+    '{cpv}': s.cpv || '',
+    '{budget}': formatBudgetDisplay(s.budget, s.budget_currency),
+    '{lead_url}': sourceUrlFromSupplier(s) || s.lead_url || '',
   };
   for (const k of Object.keys(map)) out = out.split(k).join(map[k]);
   return out;
@@ -2430,11 +3271,20 @@ async function renderCards() {
   const status = (statusRaw === 'all') ? '' : statusRaw;
   const segmentRaw = (document.getElementById('segmentSel') || {}).value || 'all';
   const segment = (segmentRaw === 'all') ? '' : segmentRaw;
+  const geoRaw = (document.getElementById('geoSel') || {}).value || 'all';
+  const geoBucket = (geoRaw === 'all') ? '' : geoRaw;
+  const workspaceRaw = (document.getElementById('workspaceSel') || {}).value || 'all';
+  const workspace = (workspaceRaw === 'all') ? '' : workspaceRaw;
+  const sourceSelEl = document.getElementById('sourceSel');
+  const sourceValues = getMultiSelectValues(sourceSelEl);
+  const leadSources = sourceValues.includes('all') ? [] : sourceValues;
+  const contactCohortRaw = (document.getElementById('contactCohortSel') || {}).value || 'all';
+  const contactCohort = (contactCohortRaw === 'all') ? '' : contactCohortRaw;
   const followupDueOnly = (((document.getElementById('followupSel') || {}).value || 'all') === 'due');
   const minScore = Number((document.getElementById('minScoreInput') || {}).value || 0);
   const view = 'table';
 
-  const suppliers = await store.query({q, status, segment, minScore, followupDueOnly});
+  const suppliers = await store.query({q, status, segment, minScore, followupDueOnly, geoBucket, workspace, leadSources, contactCohort});
   await renderKpiPanel();
   // clean selection (remove ids that are gone)
   let changed = false;
@@ -2459,12 +3309,13 @@ async function renderCards() {
       <table class="table">
         <thead><tr>
           <th>✓</th>
-          <th>Компания</th><th>ИП</th><th>ФИО поставщика</th><th>ФИО руководителя</th><th>Телефон</th><th>Email</th><th>ИНН</th><th>Адрес</th><th style="min-width:320px;">Объект</th><th>Источник</th><th>Сегмент</th><th>Скоринг</th><th>Follow-up</th><th>Статус</th><th>Контакты</th><th>Сообщение</th><th>Письмо</th>
+          <th>Компания</th><th>ИП</th><th>ФИО поставщика</th><th>ФИО руководителя</th><th>Телефон</th><th>Email</th><th>ИНН</th><th>Адрес</th><th style="min-width:320px;">Объект</th><th>Источник</th><th>Workspace</th><th>Ссылка</th><th>Гео</th><th>Дедлайн</th><th>CPV</th><th>Бюджет</th><th>Сегмент</th><th>Скоринг</th><th>Follow-up</th><th>Статус</th><th>Контакты</th><th>Когорта</th><th>Сообщение</th><th>Письмо</th>
         </tr></thead>
         <tbody></tbody>
       </table>`;
     const tbody = tableWrap.querySelector('tbody');
     for (const s of suppliers) {
+      const srcUrl = sourceUrlFromSupplier(s);
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><input type="checkbox" class="card-select" data-id="${s.id}" /></td>
@@ -2478,6 +3329,12 @@ async function renderCards() {
         <td>${escapeHtml(s.address)}</td>
         <td style="min-width:320px;"><div class="cell-scroll">${escapeHtml(s.purchase_object_name||'')}</div></td>
         <td>${escapeHtml(s.source_file||'')}</td>
+        <td>${escapeHtml(s.workspace || '')}</td>
+        <td>${srcUrl ? `<a href="${escapeHtml(srcUrl)}" target="_blank" rel="noopener">Открыть</a>` : '—'}</td>
+        <td>${escapeHtml(s.geo_bucket||'')}</td>
+        <td>${escapeHtml((s.deadline||'').slice(0, 10))}</td>
+        <td>${escapeHtml(s.cpv||'')}</td>
+        <td>${escapeHtml(formatBudgetDisplay(s.budget, s.budget_currency))}</td>
         <td>${escapeHtml(s.segment||'')}</td>
         <td>${escapeHtml(s.lead_score||0)}</td>
         <td>${escapeHtml((s.followup_at||'').slice(0,10))}</td>
@@ -2485,6 +3342,7 @@ async function renderCards() {
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">${renderContactButtons(s, true) || '<span class="muted">—</span>'}</div>
         </td>
+        <td>${escapeHtml(contactCohortLabel(s.contact_cohort))}</td>
         <td>
           <button class="btn btn--ghost" type="button" data-copy-msg="1" data-id="${s.id}" style="padding:6px 10px;border-radius:10px">Copy</button>
         </td>
@@ -2499,6 +3357,7 @@ async function renderCards() {
     const cards = document.createElement('div');
     cards.className = 'cards';
     for (const s of suppliers) {
+      const srcUrl = sourceUrlFromSupplier(s);
       const card = document.createElement('div');
       card.className = 'card2' + (s.status === 'new' ? ' new' : '');
       card.id = 'card-' + s.id;
@@ -2535,7 +3394,14 @@ async function renderCards() {
           <div class="row"><div class="k">Объект:</div><div class="v trunc">${escapeHtml(s.purchase_object_name||'')}</div></div>
           <div class="row"><div class="k">Адрес:</div><div class="v trunc">${escapeHtml(s.address)}</div></div>
           <div class="row"><div class="k">Источник:</div><div class="v muted trunc">${escapeHtml(s.source_file||'')}</div></div>
+          <div class="row"><div class="k">Workspace:</div><div class="v">${escapeHtml(s.workspace || '')}</div></div>
+          <div class="row"><div class="k">Гео:</div><div class="v">${escapeHtml(s.geo_bucket||'')}</div></div>
+          <div class="row"><div class="k">Дедлайн:</div><div class="v">${escapeHtml((s.deadline||'').slice(0,10))}</div></div>
+          <div class="row"><div class="k">CPV:</div><div class="v">${escapeHtml(s.cpv||'')}</div></div>
+          <div class="row"><div class="k">Бюджет:</div><div class="v">${escapeHtml(formatBudgetDisplay(s.budget, s.budget_currency))}</div></div>
+          ${srcUrl ? `<div class="row"><div class="k">Ссылка:</div><div class="v"><a href="${escapeHtml(srcUrl)}" target="_blank" rel="noopener">Открыть источник</a></div></div>` : ''}
           <div class="row"><div class="k">Сегмент:</div><div class="v">${escapeHtml(s.segment||'')}</div></div>
+          <div class="row"><div class="k">Когорта контакта:</div><div class="v">${escapeHtml(contactCohortLabel(s.contact_cohort))}</div></div>
           <div class="row"><div class="k">Скоринг:</div><div class="v">${escapeHtml(s.lead_score||0)}</div></div>
           <div class="row"><div class="k">Follow-up:</div><div class="v">${escapeHtml((s.followup_at||'').slice(0,10))}</div></div>
           <div class="row"><div class="k">Статус:</div><div class="v">
@@ -2625,7 +3491,15 @@ function renderQueueCurrent() {
   document.getElementById('qEmail').textContent = s.email || '';
   document.getElementById('qInn').textContent = s.inn || '';
   document.getElementById('qAddress').textContent = s.address || '';
-  document.getElementById('qSource').textContent = s.source_file || '';
+  const srcWrap = document.getElementById('qSource');
+  const srcUrl = sourceUrlFromSupplier(s);
+  if (srcWrap) {
+    if (srcUrl) {
+      srcWrap.innerHTML = `${escapeHtml(s.source_file || '')} • <a href="${escapeHtml(srcUrl)}" target="_blank" rel="noopener">Открыть источник</a>`;
+    } else {
+      srcWrap.textContent = s.source_file || '';
+    }
+  }
   document.getElementById('qStatus').textContent = s.status || '';
   document.getElementById('openCardLink').href = `#cards?id=${s.id}`;
 }
@@ -2642,7 +3516,7 @@ async function loadQueue() {
   queueSuppliers = await store.getByIds(queueIds);
   // keep order as ids order
   const map = new Map(queueSuppliers.map(s => [Number(s.id), s]));
-  queueSuppliers = queueIds.map(id => map.get(Number(id))).filter(Boolean);
+  queueSuppliers = queueIds.map(id => map.get(Number(id))).filter(Boolean).map(enrichSupplier);
 
   qIdx = loadQueuePos();
   if (qIdx >= queueSuppliers.length) qIdx = queueSuppliers.length - 1;
@@ -2779,29 +3653,31 @@ async function doImport(files, opts) {
         continue;
       }
       if (lower.endsWith('.pdf')) {
-        if (!window.pdfjsLib) { addReason('pdf_unsupported', name); continue; }
-	        try {
-	          let text = await extractTextFromPdfBytes(ent.bytes);
-	        if (!text || text.trim().length < 30) {
-	          if (allowPdfOcr) {
-	            try {
-	              if (ctx.onProgress) ctx.onProgress(`OCR: ${name} ${ctx.ocrPagesLabel || ''}`.trim(), null);
-	              const ocrText = await ocrPdfViaLocalHelper(ent.bytes, name, null, ctx.ocrPagesStr, ctx.ocrScale);
-	              if (!ocrText || ocrText.trim().length < 30) {
-	                addReason('ocr_failed', name, 'OCR вернул слишком мало текста');
-	                continue;
-	              }
-	              text = ocrText;
-	            } catch(e) {
-	              const msg = String((e && e.message) ? e.message : e);
-	              addReason(msg.includes('ocr_unavailable') ? 'ocr_unavailable' : 'ocr_failed', name, msg);
-	              continue;
-	            }
-	          } else {
-	            addReason('pdf_no_text', name);
-	            continue;
-	          }
-	        }
+        try {
+          let text = '';
+          if (window.pdfjsLib) {
+            try { text = await extractTextFromPdfBytes(ent.bytes); } catch (_) {}
+          }
+          if (!text || text.trim().length < 30) {
+            if (allowPdfOcr) {
+              try {
+                if (ctx.onProgress) ctx.onProgress(`OCR: ${name} ${ctx.ocrPagesLabel || ''}`.trim(), null);
+                const ocrText = await ocrPdfViaLocalHelper(ent.bytes, name, null, ctx.ocrPagesStr, ctx.ocrScale);
+                if (!ocrText || ocrText.trim().length < 30) {
+                  addReason('ocr_failed', name, 'OCR вернул слишком мало текста');
+                  continue;
+                }
+                text = ocrText;
+              } catch(e) {
+                const msg = String((e && e.message) ? e.message : e);
+                addReason(msg.includes('ocr_unavailable') ? 'ocr_unavailable' : 'ocr_failed', name, msg);
+                continue;
+              }
+            } else {
+              addReason(window.pdfjsLib ? 'pdf_no_text' : 'pdf_unsupported', name);
+              continue;
+            }
+          }
           const {supplier, reason} = tryParseSupplierFromPlainText(text, name, {requireMobile, requireEmail, requireInn, requirePhone});
           if (!supplier) addReason(reason, name);
           else goodSuppliers.push(supplier);
@@ -2813,7 +3689,7 @@ async function doImport(files, opts) {
       if (!(lower.endsWith('.html') || lower.endsWith('.htm'))) continue;
 
       const htmlText = decodeHtmlBytes(ent.bytes);
-      const {supplier, reason} = tryParseSupplierFromHtmlText(htmlText, name, {requireMobile, requireEmail});
+      const {supplier, reason} = tryParseSupplierFromHtmlText(htmlText, name, {requireMobile, requireEmail, requireInn, requirePhone});
       if (!supplier) addReason(reason, name);
       else goodSuppliers.push(supplier);
     }
@@ -2836,30 +3712,32 @@ async function doImport(files, opts) {
 
 
     if (lower.endsWith('.pdf')) {
-      if (!window.pdfjsLib) { addReason('pdf_unsupported', name); continue; }
       const bytes = await readFileAsBytes(f);
-	      try {
-	        let text = await extractTextFromPdfBytes(bytes);
-	        if (!text || text.trim().length < 30) {
-	          if (allowPdfOcr) {
-	            try {
-	            if (onProgress) onProgress(`OCR: ${name} ${ocrPagesLabel || ''}`.trim(), null);
-	            const ocrText = await ocrPdfViaLocalHelper(bytes, name, f, ocrPagesStr, ocrScale);
-	            if (!ocrText || ocrText.trim().length < 30) {
-	              addReason('ocr_failed', name, 'OCR вернул слишком мало текста');
-	              continue;
-	            }
-	            text = ocrText;
-	            } catch(e) {
-	              const msg = String((e && e.message) ? e.message : e);
-	              addReason(msg.includes('ocr_unavailable') ? 'ocr_unavailable' : 'ocr_failed', name, msg);
-	              continue;
-	            }
-	          } else {
-	            addReason('pdf_no_text', name);
-	            continue;
-	          }
-	        }
+      try {
+        let text = '';
+        if (window.pdfjsLib) {
+          try { text = await extractTextFromPdfBytes(bytes); } catch (_) {}
+        }
+        if (!text || text.trim().length < 30) {
+          if (allowPdfOcr) {
+            try {
+              if (onProgress) onProgress(`OCR: ${name} ${ocrPagesLabel || ''}`.trim(), null);
+              const ocrText = await ocrPdfViaLocalHelper(bytes, name, f, ocrPagesStr, ocrScale);
+              if (!ocrText || ocrText.trim().length < 30) {
+                addReason('ocr_failed', name, 'OCR вернул слишком мало текста');
+                continue;
+              }
+              text = ocrText;
+            } catch(e) {
+              const msg = String((e && e.message) ? e.message : e);
+              addReason(msg.includes('ocr_unavailable') ? 'ocr_unavailable' : 'ocr_failed', name, msg);
+              continue;
+            }
+          } else {
+            addReason(window.pdfjsLib ? 'pdf_no_text' : 'pdf_unsupported', name);
+            continue;
+          }
+        }
         const {supplier, reason} = tryParseSupplierFromPlainText(text, name, {requireMobile, requireEmail, requireInn, requirePhone});
         if (!supplier) addReason(reason, name);
         else goodSuppliers.push(supplier);
@@ -2893,7 +3771,10 @@ async function doImport(files, opts) {
   // refresh UI after import
   try {
     const r = currentRoute();
-    if (r.page === 'cards') await renderCards();
+    if (r.page === 'cards') {
+      forceWorkspaceFilter('manual');
+      await renderCards();
+    }
     if (r.page === 'queue') await loadQueue();
   } catch(e) {}
 
@@ -3054,25 +3935,577 @@ function bindImport() {
 	      }
 	    });
 	  }
-	  const refresh = async () => {
-	    if (!ocrStatus) return;
-	    if (window.__ocrBusy) {
-	      ocrStatus.textContent = 'OCR: в работе';
-	      return;
-	    }
-	    const h = await checkOcrHelper();
-	    if (h && h.ok) {
-	      const v = h.version ? ` (v${h.version})` : '';
-	      ocrStatus.textContent = 'OCR: подключен' + v;
-	    } else {
-	      ocrStatus.textContent = 'OCR: не запущен';
-	    }
-	  };
+		  const refresh = async () => {
+		    if (!ocrStatus) return;
+		    if (window.__ocrBusy) {
+		      ocrStatus.textContent = 'OCR: в работе';
+		      return;
+		    }
+		    const h = await checkOcrHelper();
+		    if (h && h.ok) {
+		      const deps = (h.json && h.json.deps) ? h.json.deps : {};
+		      const v = (h.json && h.json.version) ? ` (v${h.json.version})` : '';
+		      const degraded = (deps.canvas === false || deps.pdfjs === false);
+		      ocrStatus.textContent = degraded ? ('OCR: подключен частично' + v) : ('OCR: подключен' + v);
+		    } else {
+		      ocrStatus.textContent = 'OCR: не запущен';
+		    }
+		  };
 	  if (ocrBox) ocrBox.addEventListener('change', refresh);
 	  refresh();
 	  // auto-refresh health (useful if helper is started after the page was opened)
 	  if (window.__ocrStatusTimer) clearInterval(window.__ocrStatusTimer);
 	  window.__ocrStatusTimer = setInterval(refresh, 2500);
+
+  const autoLeadStatus = document.getElementById('autoLeadStatus');
+  const autoLeadPreview = document.getElementById('autoLeadPreview');
+  const autoSrcTed = document.getElementById('autoSrcTed');
+  const autoSrcCyprus = document.getElementById('autoSrcCyprus');
+  const autoSrcZakupkiRu = document.getElementById('autoSrcZakupkiRu');
+  const autoSrcGoszakupKz = document.getElementById('autoSrcGoszakupKz');
+  const autoSrcIcetradeBy = document.getElementById('autoSrcIcetradeBy');
+  const autoTedRuOnly = document.getElementById('autoTedRuOnly');
+  const autoGeoBucket = document.getElementById('autoGeoBucket');
+  const autoLeadLimit = document.getElementById('autoLeadLimit');
+  const autoCyprusPages = document.getElementById('autoCyprusPages');
+  const autoDetailProbeCount = document.getElementById('autoDetailProbeCount');
+  const autoDeepParse = document.getElementById('autoDeepParse');
+  const autoGoszakupToken = document.getElementById('autoGoszakupToken');
+  const autoLeadEnabled = document.getElementById('autoLeadEnabled');
+  const autoLeadIntervalMin = document.getElementById('autoLeadIntervalMin');
+  const autoCollectNowBtn = document.getElementById('autoCollectNowBtn');
+  const autoDiagnoseBtn = document.getElementById('autoDiagnoseBtn');
+  const autoDownloadDiagBtn = document.getElementById('autoDownloadDiagBtn');
+  const autoLoadCacheBtn = document.getElementById('autoLoadCacheBtn');
+  const autoResetBtn = document.getElementById('autoResetBtn');
+  const autoSourceReport = document.getElementById('autoSourceReport');
+  const autoLeadCohorts = document.getElementById('autoLeadCohorts');
+
+  const setAutoLeadStatus = (msg) => {
+    if (autoLeadStatus) autoLeadStatus.textContent = String(msg || '');
+  };
+
+  const prettySourceName = (src) => {
+    const key = String(src || '').trim().toLowerCase();
+    if (key === 'ted') return 'TED';
+    if (key === 'cyprus_eprocurement') return 'Cyprus eProcurement';
+    if (key === 'zakupki_gov_ru') return 'Zakupki.gov.ru';
+    if (key === 'goszakup_gov_kz') return 'Goszakup.gov.kz';
+    if (key === 'icetrade_by') return 'Icetrade.by';
+    return key || 'unknown';
+  };
+
+  const classifySourceReport = (rep) => {
+    const warnings = Array.isArray(rep && rep.warnings) ? rep.warnings.map((x) => String(x || '')) : [];
+    const allText = [String((rep && rep.error) || ''), ...warnings].join(' ').toLowerCase();
+    if (/(token_missing|requires_api_token)/i.test(allText)) return { tone: 'warn', label: 'Нужен token' };
+    if (/(timeout|und_err|econn|fetch_failed|connection|network)/i.test(allText)) return { tone: 'danger', label: 'Сеть / timeout' };
+    if (/skipped_for_geo/i.test(allText)) return { tone: 'muted', label: 'Пропущен по гео' };
+    if (rep && rep.error) return { tone: 'danger', label: 'Ошибка' };
+    if (Number((rep && rep.fetched) || 0) > 0) return { tone: 'ok', label: 'Есть лиды' };
+    return { tone: 'muted', label: '0 лидов' };
+  };
+
+  const renderSourceReportsHtml = (reports) => {
+    const arr = Array.isArray(reports) ? reports : [];
+    if (!autoSourceReport) return;
+    if (!arr.length) {
+      autoSourceReport.innerHTML = '';
+      return;
+    }
+    const toneStyle = {
+      ok: 'background:rgba(40,180,120,.12);border-color:rgba(40,180,120,.35);color:#baf3d2;',
+      warn: 'background:rgba(255,184,77,.10);border-color:rgba(255,184,77,.35);color:#ffd69a;',
+      danger: 'background:rgba(255,107,107,.10);border-color:rgba(255,107,107,.35);color:#ffb3b3;',
+      muted: 'background:rgba(148,163,184,.08);border-color:rgba(148,163,184,.22);color:#cbd5e1;'
+    };
+    autoSourceReport.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;">
+        ${arr.map((rep) => {
+          const meta = classifySourceReport(rep);
+          const warnings = Array.isArray(rep && rep.warnings) ? rep.warnings.slice(0, 2).map((x) => String(x || '')) : [];
+          const detail = warnings[0] || String((rep && rep.error) || '') || '';
+          const fetched = Number((rep && rep.fetched) || 0);
+          return `
+            <div class="panel" style="padding:10px 12px;border:1px solid rgba(255,255,255,.08);">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <strong style="font-size:14px;">${escapeHtml(prettySourceName(rep && rep.source))}</strong>
+                <span style="padding:3px 8px;border:1px solid transparent;border-radius:999px;font-size:12px;white-space:nowrap;${toneStyle[meta.tone] || toneStyle.muted}">${escapeHtml(meta.label)}</span>
+              </div>
+              <div class="muted" style="margin-top:6px;font-size:13px;">fetched=${fetched}${Number.isFinite(Number(rep && rep.ms)) ? `, ms=${Number(rep.ms)}` : ''}</div>
+              <div style="margin-top:6px;font-size:12px;line-height:1.35;color:#d6deff;">${escapeHtml(detail || 'Без предупреждений.')}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  };
+
+  const formatCohortMetaShort = (summary) => {
+    const s = summary || {};
+    return `email_any=${Number(s.email_any || 0)}, phone_any=${Number(s.phone_any || 0)}, tg=${Number(s.telegram_any || 0)}, wa=${Number(s.whatsapp_any || 0)}, no_contacts=${Number(s.no_contacts || 0)}`;
+  };
+
+  const openCardsForAutoCohort = async (cohort = 'all', geoBucket = '') => {
+    const filters = loadFilters();
+    filters.q = '';
+    filters.status = 'all';
+    filters.segment = 'all';
+    filters.followup = 'all';
+    filters.minScore = '';
+    filters.sources = ['all'];
+    filters.workspace = 'auto';
+    filters.contactCohort = cohort === 'all' ? 'all' : cohort;
+    filters.geo = geoBucket ? String(geoBucket).toUpperCase() : 'all';
+    saveFilters(filters);
+    const qInput = document.getElementById('qInput');
+    const statusSel = document.getElementById('statusSel');
+    const segmentSel = document.getElementById('segmentSel');
+    const sourceSel = document.getElementById('sourceSel');
+    const cohortSel = document.getElementById('contactCohortSel');
+    const workspaceSel = document.getElementById('workspaceSel');
+    const geoSel = document.getElementById('geoSel');
+    const followupSel = document.getElementById('followupSel');
+    const minScoreInput = document.getElementById('minScoreInput');
+    if (qInput) qInput.value = '';
+    if (statusSel) statusSel.value = 'all';
+    if (segmentSel) segmentSel.value = 'all';
+    if (sourceSel) setMultiSelectValues(sourceSel, ['all'], ['all']);
+    if (cohortSel) cohortSel.value = filters.contactCohort;
+    if (workspaceSel) workspaceSel.value = 'auto';
+    if (geoSel) geoSel.value = filters.geo;
+    if (followupSel) followupSel.value = 'all';
+    if (minScoreInput) minScoreInput.value = '';
+    if (currentRoute().page === 'cards') {
+      await renderCards();
+    } else {
+      window.location.hash = '#cards';
+    }
+  };
+
+  const renderLeadCohortsHtml = (leads, { canOpenCards = false, geoBucket = '' } = {}) => {
+    if (!autoLeadCohorts) return;
+    const rows = previewLeadRows(leads);
+    if (!rows.length) {
+      autoLeadCohorts.innerHTML = '';
+      return;
+    }
+    const summary = summarizeLeadCohorts(rows);
+    const tiles = [
+      { key: 'email_plus_alt', title: 'Email + доп. канал', desc: 'Можно писать и в email, и в другой канал.' },
+      { key: 'email_ready', title: 'Только Email', desc: 'Годятся для email-рассылки, других каналов нет.' },
+      { key: 'alt_contact_ready', title: 'Телефон / WA / TG', desc: 'Без email, но с прямым контактом.' },
+      { key: 'no_contacts', title: 'Нет контактов', desc: 'Нужен ручной добор контактов.' }
+    ];
+    autoLeadCohorts.innerHTML = `
+      <div class="panel" style="padding:10px 12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:800;">Контактные когорты автолидов</div>
+            <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(formatCohortMetaShort(summary))}</div>
+          </div>
+          ${canOpenCards ? `<button class="btn btn--ghost btn--mini" type="button" data-open-auto-cohort="all" data-geo-bucket="${escapeHtml(String(geoBucket || ''))}">Все авто-карточки</button>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:10px;">
+          ${tiles.map((tile) => `
+            <div class="panel" style="padding:10px 12px;border:1px solid rgba(255,255,255,.08);">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <strong style="font-size:14px;">${escapeHtml(tile.title)}</strong>
+                <span class="badge">${Number(summary[tile.key] || 0)}</span>
+              </div>
+              <div class="muted" style="margin-top:6px;font-size:12px;line-height:1.35;">${escapeHtml(tile.desc)}</div>
+              ${canOpenCards ? `<div style="margin-top:8px;"><button class="btn btn--ghost btn--mini" type="button" data-open-auto-cohort="${escapeHtml(tile.key)}" data-geo-bucket="${escapeHtml(String(geoBucket || ''))}">Открыть в карточках</button></div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  };
+
+  const formatSourceReportsShort = (reports) => {
+    const arr = Array.isArray(reports) ? reports : [];
+    return arr.map((x) => {
+      const src = String((x && x.source) || 'unknown');
+      const fetched = Number((x && x.fetched) || 0);
+      if (x && x.ok) {
+        const warnN = Array.isArray(x.warnings) ? x.warnings.length : 0;
+        if (warnN > 0) {
+          const firstWarn = String((x.warnings && x.warnings[0]) || '').slice(0, 42);
+          return `${src}:${fetched} warn=${warnN}${firstWarn ? ` (${firstWarn})` : ''}`;
+        }
+        return `${src}:${fetched}`;
+      }
+      const err = String((x && x.error) || 'error').slice(0, 24);
+      return `${src}:ERR(${err})`;
+    }).join(', ');
+  };
+
+  const collectSourceWarnings = (reports) => {
+    const out = [];
+    (Array.isArray(reports) ? reports : []).forEach((r) => {
+      const ws = Array.isArray(r && r.warnings) ? r.warnings : [];
+      ws.forEach((w) => out.push(String(w || '')));
+      if (r && r.error) out.push(String(r.error || ''));
+    });
+    return out;
+  };
+
+  const buildAutoCollectHint = (st, rep) => {
+    const warnings = collectSourceWarnings(rep && rep.source_reports);
+    const hasWarn = (re) => warnings.some((w) => re.test(String(w || '')));
+    const hints = [];
+    if (hasWarn(/goszakup_token_missing|goszakup_requires_api_token/i)) {
+      hints.push('Goszakup требует API token (или отключите этот источник).');
+    }
+    if (hasWarn(/zakupki_timeout|zakupki_fetch_failed|und_err|econn|timed?\s*out/i)) {
+      hints.push('Zakupki недоступен из текущей сети (timeout/connection).');
+    }
+    if (hasWarn(/skipped_for_geo/i)) {
+      hints.push('Часть источников пропущена из-за выбранной гео-базы.');
+    }
+    if (!hints.length && Number((rep && rep.fetched) || 0) === 0) {
+      hints.push('Источники не вернули подходящих лидов для текущих настроек.');
+    }
+    const runMeta = `geo=${String(st && st.geoBucket || '').toUpperCase()}, sources=${(Array.isArray(st && st.sources) ? st.sources : []).join('+') || 'none'}`;
+    return { runMeta, text: hints.join(' ') };
+  };
+
+  const buildTedScopeLabel = (st) => {
+    const geo = String(st && st.geoBucket || '').trim().toUpperCase();
+    const ruOnly = !!(st && st.tedRuOnly);
+    if (geo === 'RU_CIS' && ruOnly) return 'TED=RUS-only';
+    if (geo === 'RU_CIS') return 'TED=RU_CIS';
+    return 'TED=CYPRUS';
+  };
+
+  const readAutoSettingsFromUi = () => {
+    const sources = [];
+    if (autoSrcTed && autoSrcTed.checked) sources.push('ted');
+    if (autoSrcCyprus && autoSrcCyprus.checked) sources.push('cyprus_eprocurement');
+    if (autoSrcZakupkiRu && autoSrcZakupkiRu.checked) sources.push('zakupki_gov_ru');
+    if (autoSrcGoszakupKz && autoSrcGoszakupKz.checked) sources.push('goszakup_gov_kz');
+    if (autoSrcIcetradeBy && autoSrcIcetradeBy.checked) sources.push('icetrade_by');
+    return {
+      enabled: !!(autoLeadEnabled && autoLeadEnabled.checked),
+      intervalMin: Number((autoLeadIntervalMin && autoLeadIntervalMin.value) || 180),
+      geoBucket: String((autoGeoBucket && autoGeoBucket.value) || 'CYPRUS_EN'),
+      limit: Number((autoLeadLimit && autoLeadLimit.value) || 40),
+      cyprusPages: Number((autoCyprusPages && autoCyprusPages.value) || 5),
+      deepParse: !!(autoDeepParse && autoDeepParse.checked),
+      detailProbeCount: Number((autoDetailProbeCount && autoDetailProbeCount.value) || 10),
+      goszakupToken: String((autoGoszakupToken && autoGoszakupToken.value) || '').trim(),
+      tedRuOnly: !!(autoTedRuOnly && autoTedRuOnly.checked),
+      sources
+    };
+  };
+
+  const applyAutoSettingsToUi = (st) => {
+    const s = st || loadLeadCollectSettings();
+    if (autoLeadEnabled) autoLeadEnabled.checked = !!s.enabled;
+    if (autoLeadIntervalMin) autoLeadIntervalMin.value = String(Number(s.intervalMin || 180));
+    if (autoGeoBucket) autoGeoBucket.value = String(s.geoBucket || 'CYPRUS_EN');
+    if (autoLeadLimit) autoLeadLimit.value = String(Number(s.limit || 40));
+    if (autoCyprusPages) autoCyprusPages.value = String(Number(s.cyprusPages || 5));
+    if (autoDeepParse) autoDeepParse.checked = s.deepParse !== false;
+    if (autoDetailProbeCount) autoDetailProbeCount.value = String(Number(s.detailProbeCount || 10));
+    if (autoGoszakupToken) autoGoszakupToken.value = String(s.goszakupToken || '');
+    if (autoSrcTed) autoSrcTed.checked = Array.isArray(s.sources) ? s.sources.includes('ted') : true;
+    if (autoSrcCyprus) autoSrcCyprus.checked = Array.isArray(s.sources) ? s.sources.includes('cyprus_eprocurement') : true;
+    if (autoSrcZakupkiRu) autoSrcZakupkiRu.checked = Array.isArray(s.sources) ? s.sources.includes('zakupki_gov_ru') : false;
+    if (autoSrcGoszakupKz) autoSrcGoszakupKz.checked = Array.isArray(s.sources) ? s.sources.includes('goszakup_gov_kz') : false;
+    if (autoSrcIcetradeBy) autoSrcIcetradeBy.checked = Array.isArray(s.sources) ? s.sources.includes('icetrade_by') : false;
+    if (autoTedRuOnly) autoTedRuOnly.checked = !!s.tedRuOnly;
+  };
+
+  const applyGeoSourcePreset = () => {
+    const geo = String((autoGeoBucket && autoGeoBucket.value) || 'CYPRUS_EN').toUpperCase();
+    if (geo === 'RU_CIS') {
+      if (autoSrcTed) autoSrcTed.checked = true;
+      if (autoSrcCyprus) autoSrcCyprus.checked = false;
+      if (autoSrcZakupkiRu) autoSrcZakupkiRu.checked = true;
+      if (autoSrcGoszakupKz) autoSrcGoszakupKz.checked = true;
+      if (autoSrcIcetradeBy) autoSrcIcetradeBy.checked = true;
+      setAutoLeadStatus('RU_CIS: используются TED + Zakupki.gov.ru + Goszakup.gov.kz + Icetrade.by. Cyprus источник отключен.');
+      return;
+    }
+    if (autoSrcTed) autoSrcTed.checked = true;
+    if (autoSrcCyprus) autoSrcCyprus.checked = true;
+    if (autoSrcZakupkiRu) autoSrcZakupkiRu.checked = false;
+    if (autoSrcGoszakupKz) autoSrcGoszakupKz.checked = false;
+    if (autoSrcIcetradeBy) autoSrcIcetradeBy.checked = false;
+    setAutoLeadStatus('CYPRUS_EN: используются TED + Cyprus eProcurement.');
+  };
+
+  const persistAutoSettingsFromUi = () => {
+    const st = readAutoSettingsFromUi();
+    st.intervalMin = Math.max(10, Math.min(1440, Number(st.intervalMin || 180)));
+    st.limit = Math.max(5, Math.min(300, Number(st.limit || 40)));
+    st.cyprusPages = Math.max(1, Math.min(25, Number(st.cyprusPages || 5)));
+    st.detailProbeCount = Math.max(0, Math.min(80, Number(st.detailProbeCount || 10)));
+    saveLeadCollectSettings(st);
+    return st;
+  };
+
+  const runLeadCollection = async ({ importToStore = true, silent = false } = {}) => {
+    const st = persistAutoSettingsFromUi();
+    if (!st.sources.length) {
+      setAutoLeadStatus('Выберите хотя бы один источник.');
+      return;
+    }
+    const goszakupSelectedNoToken = st.sources.includes('goszakup_gov_kz') && !String(st.goszakupToken || '').trim();
+    if (goszakupSelectedNoToken && !silent) {
+      flash('Goszakup выбран без API token: источник может вернуть 0 лидов.', 'error');
+    }
+    if (window.__leadCollectBusy) return;
+    window.__leadCollectBusy = true;
+    try {
+      setAutoLeadStatus(`Сбор лидов... geo=${String(st.geoBucket || '').toUpperCase()}, sources=${st.sources.join('+')}, ${buildTedScopeLabel(st)}`);
+      const rep = await collectLeadsViaHelper({
+        sources: st.sources,
+        limit: st.limit,
+        geoBucket: st.geoBucket,
+        deepParse: st.deepParse !== false,
+        detailProbeCount: st.detailProbeCount,
+        cyprusMaxPages: st.cyprusPages,
+        ted: { query: defaultTedQueryForGeo(st.geoBucket, !!st.tedRuOnly) },
+        goszakup: { endpoint: 'lots', token: st.goszakupToken || '' }
+      });
+      const leads = Array.isArray(rep.leads) ? rep.leads : [];
+      if (autoLeadPreview) autoLeadPreview.innerHTML = renderLeadPreviewHtml(leads);
+      renderSourceReportsHtml(rep.source_reports);
+      renderLeadCohortsHtml(leads, { canOpenCards: !!importToStore, geoBucket: st.geoBucket });
+      localStorage.setItem(APP.LEAD_COLLECT_LAST_KEY, JSON.stringify({
+        at: new Date().toISOString(),
+        report: rep,
+        leads: leads.slice(0, 100),
+        imported: !!importToStore,
+        geoBucket: st.geoBucket
+      }));
+
+      let inserted = 0;
+      let updated = 0;
+      let emailReady = 0;
+      let cohortSummary = summarizeLeadCohorts(previewLeadRows(leads));
+      if (importToStore && leads.length) {
+        const rows = leads.map(normalizeLeadToSupplier).filter(x => !!x.source_uid);
+        emailReady = rows.filter((x) => isValidEmailAddress(x.email)).length;
+        const up = await store.upsertMany(rows);
+        inserted = Number(up.inserted || 0);
+        updated = Number(up.updated || 0);
+        const route = currentRoute();
+        if (route.page === 'cards') {
+          forceWorkspaceFilter('auto');
+          await renderCards();
+        }
+      }
+      const srcMeta = formatSourceReportsShort(rep.source_reports);
+      const hint = buildAutoCollectHint(st, rep);
+      setAutoLeadStatus(`Сбор завершен (${hint.runMeta}): fetched=${rep.fetched || 0}, inserted=${inserted}, updated=${updated}, email_ready=${emailReady}, deep_parse=${st.deepParse !== false ? 'on' : 'off'}, ${formatCohortMetaShort(cohortSummary)}. ${srcMeta}${hint.text ? ` | ${hint.text}` : ''}`);
+      if (!silent) flash(`Автосбор лидов: fetched=${rep.fetched || 0}, inserted=${inserted}, updated=${updated}, email_ready=${emailReady}`, 'ok');
+      if (!silent && Number(rep.fetched || 0) === 0 && hint.text) {
+        flash(`Автосбор: ${hint.text}`, 'error');
+      }
+    } catch (e) {
+      setAutoLeadStatus('Ошибка автосбора: ' + String(e && e.message ? e.message : e));
+      if (!silent) flash('Ошибка автосбора: ' + String(e && e.message ? e.message : e), 'error');
+    } finally {
+      window.__leadCollectBusy = false;
+    }
+  };
+
+  const runLeadDiagnostics = async () => {
+    const st = persistAutoSettingsFromUi();
+    if (!st.sources.length) {
+      setAutoLeadStatus('Выберите хотя бы один источник.');
+      return;
+    }
+    if (window.__leadCollectBusy) return;
+    window.__leadCollectBusy = true;
+    try {
+      setAutoLeadStatus(`Диагностика... geo=${String(st.geoBucket || '').toUpperCase()}, sources=${st.sources.join('+')}, ${buildTedScopeLabel(st)}`);
+      const rep = await diagnoseLeadsViaHelper({
+        sources: st.sources,
+        limit: Math.max(4, Math.min(40, Number(st.limit || 24))),
+        geoBucket: st.geoBucket,
+        deepParse: false,
+        detailProbeCount: 0,
+        cyprusMaxPages: Math.max(1, Math.min(3, Number(st.cyprusPages || 2))),
+        ted: { query: defaultTedQueryForGeo(st.geoBucket, !!st.tedRuOnly) },
+        goszakup: { endpoint: 'lots', token: st.goszakupToken || '' }
+      });
+      const sample = Array.isArray(rep.sample_leads) ? rep.sample_leads : [];
+      if (autoLeadPreview) autoLeadPreview.innerHTML = renderLeadPreviewHtml(sample);
+      renderSourceReportsHtml(rep.source_reports);
+      renderLeadCohortsHtml(sample, { canOpenCards: false, geoBucket: st.geoBucket });
+      const srcMeta = formatSourceReportsShort(rep.source_reports);
+      const hint = buildAutoCollectHint(st, { source_reports: rep.source_reports, fetched: rep.fetched });
+      setAutoLeadStatus(`Диагностика завершена (${hint.runMeta}): fetched=${rep.fetched || 0}, ${formatCohortMetaShort(summarizeLeadCohorts(previewLeadRows(sample)))}. ${srcMeta}${hint.text ? ` | ${hint.text}` : ''}`);
+      flash(`Диагностика источников: fetched=${rep.fetched || 0}`, 'ok');
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      setAutoLeadStatus('Ошибка диагностики: ' + msg);
+      flash('Ошибка диагностики: ' + msg, 'error');
+    } finally {
+      window.__leadCollectBusy = false;
+    }
+  };
+
+  const resetAutoLeadsState = async () => {
+    if (window.__leadCollectBusy) return;
+    if (!confirm('Сбросить кэш автопоиска и очистить превью лидов?')) return;
+    window.__leadCollectBusy = true;
+    try {
+      const rep = await clearLeadCacheViaHelper({ metaOnly: false });
+      try { localStorage.removeItem(APP.LEAD_COLLECT_LAST_KEY); } catch (_) {}
+      if (autoLeadPreview) autoLeadPreview.innerHTML = '<div class="muted">Кэш автопоиска очищен.</div>';
+      renderSourceReportsHtml([]);
+      renderLeadCohortsHtml([]);
+
+      let removedAutoCards = 0;
+      if (confirm('Удалить из карточек все авто-импортированные записи (workspace=auto)?')) {
+        removedAutoCards = await clearAutoWorkspaceCards();
+        if (currentRoute().page === 'cards') await renderCards();
+      }
+
+      setAutoLeadStatus(`Сброс выполнен: cache_total=${Number(rep.total_cached || 0)}, удалено авто-карточек=${removedAutoCards}.`);
+      flash(`Автопоиск сброшен. Удалено авто-карточек: ${removedAutoCards}.`, 'ok');
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      setAutoLeadStatus('Ошибка сброса автопоиска: ' + msg);
+      flash('Ошибка сброса автопоиска: ' + msg, 'error');
+    } finally {
+      window.__leadCollectBusy = false;
+    }
+  };
+
+  const downloadSupportDiagnostics = async () => {
+    try {
+      const st = persistAutoSettingsFromUi();
+      setAutoLeadStatus('Сбор диагностики...');
+      const helperDiag = await fetchSupportDiagnosticsViaHelper();
+      let lastAutoCollect = null;
+      try {
+        lastAutoCollect = JSON.parse(localStorage.getItem(APP.LEAD_COLLECT_LAST_KEY) || 'null');
+      } catch (_) {}
+      const payload = {
+        ok: true,
+        exportedAt: new Date().toISOString(),
+        app: {
+          route: currentRoute(),
+          helperBase: ocrHelperBase(),
+          autoSettings: st,
+          autoLeadCohorts: summarizeLeadCohorts(previewLeadRows((lastAutoCollect && lastAutoCollect.leads) || [])),
+          browser: {
+            userAgent: navigator.userAgent,
+            language: navigator.language
+          }
+        },
+        helper: helperDiag,
+        lastAutoCollect
+      };
+      const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '_');
+      downloadBlob(
+        new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }),
+        `strong-bridge-diagnostics-${stamp}.json`
+      );
+      setAutoLeadStatus('Диагностика собрана и скачана.');
+      flash('Диагностика скачана.', 'ok');
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      setAutoLeadStatus('Ошибка сбора диагностики: ' + msg);
+      flash('Ошибка сбора диагностики: ' + msg, 'error');
+    }
+  };
+
+  const loadLeadCachePreview = async () => {
+    try {
+      const st = persistAutoSettingsFromUi();
+      setAutoLeadStatus('Загрузка кэша лидов...');
+      const rep = await listLeadsViaHelper({ limit: st.limit, geoBucket: st.geoBucket, sources: st.sources });
+      const leads = Array.isArray(rep.leads) ? rep.leads : [];
+      if (autoLeadPreview) autoLeadPreview.innerHTML = renderLeadPreviewHtml(leads);
+      renderSourceReportsHtml([]);
+      renderLeadCohortsHtml(leads, { canOpenCards: false, geoBucket: st.geoBucket });
+      setAutoLeadStatus(`Кэш лидов: ${rep.total || 0}, показано ${leads.length}, ${formatCohortMetaShort(summarizeLeadCohorts(previewLeadRows(leads)))}.`);
+    } catch (e) {
+      setAutoLeadStatus('Ошибка чтения кэша: ' + String(e && e.message ? e.message : e));
+    }
+  };
+
+  const resetLeadTimer = () => {
+    if (window.__autoLeadTimer) {
+      clearInterval(window.__autoLeadTimer);
+      window.__autoLeadTimer = null;
+    }
+    const st = persistAutoSettingsFromUi();
+    if (!st.enabled) return;
+    const ms = Math.max(10, Number(st.intervalMin || 180)) * 60 * 1000;
+    window.__autoLeadTimer = setInterval(() => {
+      runLeadCollection({ importToStore: true, silent: true });
+    }, ms);
+  };
+
+  applyAutoSettingsToUi(loadLeadCollectSettings());
+  applyGeoSourcePreset();
+  const autoFields = [
+    autoSrcTed, autoSrcCyprus, autoSrcZakupkiRu, autoSrcGoszakupKz, autoSrcIcetradeBy, autoTedRuOnly,
+    autoGeoBucket, autoLeadLimit, autoCyprusPages, autoDetailProbeCount, autoDeepParse, autoGoszakupToken, autoLeadEnabled, autoLeadIntervalMin
+  ];
+  autoFields.forEach((el) => {
+    if (!el) return;
+    el.addEventListener('change', () => {
+      if (el === autoGeoBucket) applyGeoSourcePreset();
+      const st = persistAutoSettingsFromUi();
+      setAutoLeadStatus(`Настройки обновлены: geo=${String(st.geoBucket || '').toUpperCase()}, sources=${st.sources.join('+') || 'none'}. Нажмите «Собрать и импортировать».`);
+      resetLeadTimer();
+    });
+  });
+
+  if (autoCollectNowBtn) {
+    autoCollectNowBtn.addEventListener('click', async () => {
+      await runLeadCollection({ importToStore: true, silent: false });
+    });
+  }
+  if (autoLoadCacheBtn) {
+    autoLoadCacheBtn.addEventListener('click', async () => {
+      await loadLeadCachePreview();
+    });
+  }
+  if (autoDiagnoseBtn) {
+    autoDiagnoseBtn.addEventListener('click', async () => {
+      await runLeadDiagnostics();
+    });
+  }
+  if (autoDownloadDiagBtn) {
+    autoDownloadDiagBtn.addEventListener('click', async () => {
+      await downloadSupportDiagnostics();
+    });
+  }
+  if (autoResetBtn) {
+    autoResetBtn.addEventListener('click', async () => {
+      await resetAutoLeadsState();
+    });
+  }
+  if (autoLeadCohorts) {
+    autoLeadCohorts.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-open-auto-cohort]');
+      if (!btn) return;
+      const cohort = String(btn.getAttribute('data-open-auto-cohort') || 'all').trim();
+      const geoBucket = String(btn.getAttribute('data-geo-bucket') || '').trim();
+      await openCardsForAutoCohort(cohort, geoBucket);
+    });
+  }
+
+  try {
+    const last = JSON.parse(localStorage.getItem(APP.LEAD_COLLECT_LAST_KEY) || 'null');
+    if (last && Array.isArray(last.leads) && autoLeadPreview) {
+      autoLeadPreview.innerHTML = renderLeadPreviewHtml(last.leads);
+      renderSourceReportsHtml(last.report && last.report.source_reports);
+      renderLeadCohortsHtml(last.leads, { canOpenCards: !!last.imported, geoBucket: String(last.geoBucket || '') });
+      setAutoLeadStatus(`Последний автосбор: ${String(last.at || '').replace('T', ' ').slice(0, 16)}`);
+    }
+  } catch (_) {}
+  resetLeadTimer();
 }
 
 function bindCards() {
@@ -3080,31 +4513,64 @@ function bindCards() {
   const qInput = document.getElementById('qInput');
   const statusSel = document.getElementById('statusSel');
   const segmentSel = document.getElementById('segmentSel');
+  const geoSel = document.getElementById('geoSel');
+  const workspaceSel = document.getElementById('workspaceSel');
+  const sourceSel = document.getElementById('sourceSel');
+  const contactCohortSel = document.getElementById('contactCohortSel');
   const followupSel = document.getElementById('followupSel');
   const minScoreInput = document.getElementById('minScoreInput');
   const viewSel = document.getElementById('viewSel');
   const resetBtn = document.getElementById('resetBtn');
+  const selectEmailReadyBtn = document.getElementById('selectEmailReadyBtn');
+  const selectAltContactBtn = document.getElementById('selectAltContactBtn');
+  const exportEmailReadyCsvBtn = document.getElementById('exportEmailReadyCsvBtn');
+  const exportAltContactCsvBtn = document.getElementById('exportAltContactCsvBtn');
+  const exportNoContactsCsvBtn = document.getElementById('exportNoContactsCsvBtn');
 
   // load saved filters
   const saved = loadFilters();
   if (saved.q) qInput.value = saved.q;
   if (saved.status) statusSel.value = saved.status;
   if (saved.segment && segmentSel) segmentSel.value = saved.segment;
+  if (saved.geo && geoSel) geoSel.value = saved.geo;
+  if (saved.workspace && workspaceSel) workspaceSel.value = saved.workspace;
+  if (sourceSel) {
+    const savedSources = Array.isArray(saved.sources)
+      ? saved.sources
+      : (saved.source ? [saved.source] : ['all']);
+    setMultiSelectValues(sourceSel, savedSources, ['all']);
+  }
+  if (saved.contactCohort && contactCohortSel) contactCohortSel.value = saved.contactCohort;
   if (saved.followup && followupSel) followupSel.value = saved.followup;
   if (saved.minScore && minScoreInput) minScoreInput.value = saved.minScore;
   if (saved.view) viewSel.value = saved.view;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    saveFilters({ q: qInput.value, status: statusSel.value, segment: segmentSel ? segmentSel.value : 'all', followup: followupSel ? followupSel.value : 'all', minScore: minScoreInput ? minScoreInput.value : '', view: viewSel.value });
+    saveFilters({
+      q: qInput.value,
+      status: statusSel.value,
+      segment: segmentSel ? segmentSel.value : 'all',
+      geo: geoSel ? geoSel.value : 'all',
+      workspace: workspaceSel ? workspaceSel.value : 'all',
+      sources: sourceSel ? getMultiSelectValues(sourceSel) : ['all'],
+      contactCohort: contactCohortSel ? contactCohortSel.value : 'all',
+      followup: followupSel ? followupSel.value : 'all',
+      minScore: minScoreInput ? minScoreInput.value : '',
+      view: viewSel.value
+    });
     await renderCards();
   });
 
   resetBtn.addEventListener('click', async () => {
     qInput.value = '';
     statusSel.value = 'all';
-    viewSel.value = 'cards';
+    viewSel.value = 'table';
     if (segmentSel) segmentSel.value = 'all';
+    if (geoSel) geoSel.value = 'all';
+    if (workspaceSel) workspaceSel.value = 'all';
+    if (sourceSel) setMultiSelectValues(sourceSel, ['all'], ['all']);
+    if (contactCohortSel) contactCohortSel.value = 'all';
     if (followupSel) followupSel.value = 'all';
     if (minScoreInput) minScoreInput.value = '';
     localStorage.removeItem(APP.FILTER_KEY);
@@ -3127,12 +4593,103 @@ function bindCards() {
     await renderCards();
   });
 
+  const collectCurrentFilters = () => {
+    const statusRaw = statusSel ? statusSel.value : 'all';
+    const segmentRaw = segmentSel ? segmentSel.value : 'all';
+    const geoRaw = geoSel ? geoSel.value : 'all';
+    const workspaceRaw = workspaceSel ? workspaceSel.value : 'all';
+    const sourceValues = sourceSel ? getMultiSelectValues(sourceSel) : ['all'];
+    const leadSources = sourceValues.includes('all') ? [] : sourceValues;
+    const followupDueOnly = (((followupSel || {}).value || 'all') === 'due');
+    const minScore = Number((minScoreInput || {}).value || 0);
+    return {
+      q: qInput ? qInput.value : '',
+      status: statusRaw === 'all' ? '' : statusRaw,
+      segment: segmentRaw === 'all' ? '' : segmentRaw,
+      geoBucket: geoRaw === 'all' ? '' : geoRaw,
+      workspace: workspaceRaw === 'all' ? '' : workspaceRaw,
+      leadSources,
+      followupDueOnly,
+      minScore
+    };
+  };
+
+  const querySuppliersForCurrentFilters = async (contactCohortOverride = null) => {
+    const filters = collectCurrentFilters();
+    const cohortRaw = contactCohortSel ? contactCohortSel.value : 'all';
+    const effectiveCohort = contactCohortOverride === null
+      ? (cohortRaw === 'all' ? '' : cohortRaw)
+      : String(contactCohortOverride || '').trim();
+    return await store.query({ ...filters, contactCohort: effectiveCohort });
+  };
+
   document.getElementById('selectAllBtn').addEventListener('click', async () => {
-    const ids = await store.getIds();
-    selected = new Set(ids.map(Number).filter(Number.isFinite));
+    const filters = collectCurrentFilters();
+    const cohortRaw = contactCohortSel ? contactCohortSel.value : 'all';
+    const suppliers = await store.query({ ...filters, contactCohort: cohortRaw === 'all' ? '' : cohortRaw });
+    const ids = suppliers.map((s) => Number(s.id)).filter(Number.isFinite);
+    selected = new Set(ids);
     saveSelectedSet(selected);
     await renderCards();
   });
+
+  if (selectEmailReadyBtn) {
+    selectEmailReadyBtn.addEventListener('click', async () => {
+      const suppliers = await querySuppliersForCurrentFilters('');
+      const ids = suppliers
+        .filter((s) => String(s.contact_cohort || '') === 'email_ready' || String(s.contact_cohort || '') === 'email_plus_alt')
+        .map((s) => Number(s.id))
+        .filter(Number.isFinite);
+      selected = new Set(ids);
+      saveSelectedSet(selected);
+      await renderCards();
+      toast(`Выбрано Email-ready: ${ids.length}`);
+    });
+  }
+
+  if (selectAltContactBtn) {
+    selectAltContactBtn.addEventListener('click', async () => {
+      const suppliers = await querySuppliersForCurrentFilters('');
+      const ids = suppliers
+        .filter((s) => String(s.contact_cohort || '') === 'alt_contact_ready')
+        .map((s) => Number(s.id))
+        .filter(Number.isFinite);
+      selected = new Set(ids);
+      saveSelectedSet(selected);
+      await renderCards();
+      toast(`Выбрано без Email, но с телефоном / WA / TG: ${ids.length}`);
+    });
+  }
+
+  const exportCohortByCurrentFilters = async (cohort, filename) => {
+    const cohortList = Array.isArray(cohort) ? cohort.map((x) => String(x || '').trim()).filter(Boolean) : [String(cohort || '').trim()].filter(Boolean);
+    let suppliers = await querySuppliersForCurrentFilters('');
+    if (cohortList.length) {
+      const allowed = new Set(cohortList);
+      suppliers = suppliers.filter((s) => allowed.has(String((s && s.contact_cohort) || '').trim()));
+    }
+    if (!suppliers.length) {
+      alert('Нет карточек для выбранной когорты при текущих фильтрах.');
+      return;
+    }
+    downloadCsv(suppliers.map(mapSupplierExportRow), filename);
+  };
+
+  if (exportEmailReadyCsvBtn) {
+    exportEmailReadyCsvBtn.addEventListener('click', async () => {
+      await exportCohortByCurrentFilters(['email_ready', 'email_plus_alt'], 'suppliers_email_ready.csv');
+    });
+  }
+  if (exportAltContactCsvBtn) {
+    exportAltContactCsvBtn.addEventListener('click', async () => {
+      await exportCohortByCurrentFilters('alt_contact_ready', 'suppliers_alt_contacts.csv');
+    });
+  }
+  if (exportNoContactsCsvBtn) {
+    exportNoContactsCsvBtn.addEventListener('click', async () => {
+      await exportCohortByCurrentFilters('no_contacts', 'suppliers_no_contacts.csv');
+    });
+  }
 
   document.getElementById('deleteSelectedBtn').addEventListener('click', async () => {
     const ids = Array.from(selected);
@@ -3183,9 +4740,10 @@ function bindCards() {
     if (!btn) return;
     const id = Number(btn.getAttribute('data-id'));
     if (!Number.isFinite(id)) return;
-    const s = (await store.getByIds([id]))[0];
+    const s0 = (await store.getByIds([id]))[0];
+    const s = s0 ? enrichSupplier(s0) : null;
     if (!s) return;
-    const msg = renderTemplate(getTemplate(), s);
+    const msg = renderTemplate(getTemplateForSupplier(s), s);
     const ok = await copyText(msg);
     if (ok) toast('Сообщение скопировано');
     else alert('Не удалось скопировать. Попробуйте другой браузер.');
@@ -3194,18 +4752,34 @@ function bindCards() {
 
   // messenger actions (WA/TG) + details toggle
   document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-call-msg]');
+    if (!btn) return;
+    const id = Number(btn.getAttribute('data-id'));
+    if (!Number.isFinite(id)) return;
+    const s0 = (await store.getByIds([id]))[0];
+    const s = s0 ? enrichSupplier(s0) : null;
+    if (!s || !String(s.phone_e164 || '').trim()) { toast('Нет телефона'); return; }
+    const phone = String(s.phone_e164 || '').trim();
+    const ok = await copyText(phone);
+    if (ok) toast('Номер скопирован');
+    openAppDeepLink(`tel:${encodeURIComponent(phone.replace(/\s+/g, ''))}`, '');
+  });
+
+  document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-wa-msg]');
     if (!btn) return;
     const id = Number(btn.getAttribute('data-id'));
     if (!Number.isFinite(id)) return;
-    const s = (await store.getByIds([id]))[0];
+    const s0 = (await store.getByIds([id]))[0];
+    const s = s0 ? enrichSupplier(s0) : null;
     if (!s) return;
-    const msg = renderTemplate(getTemplate(), s);
+    const msg = renderTemplate(getTemplateForSupplier(s), s);
     const d = normalizePhoneForWhatsApp(s.phone_e164);
     if (!d) { toast('Нет телефона для WhatsApp'); return; }
     const text = encodeURIComponent(msg);
-    const url = `https://wa.me/${d}?text=${text}`;
-    window.open(url, '_blank', 'noopener');
+    const appUrl = `whatsapp://send?phone=${d}&text=${text}`;
+    const webUrl = `https://wa.me/${d}?text=${text}`;
+    openAppDeepLink(appUrl, webUrl);
   });
 
   document.addEventListener('click', async (e) => {
@@ -3213,22 +4787,30 @@ function bindCards() {
     if (!btn) return;
     const id = Number(btn.getAttribute('data-id'));
     if (!Number.isFinite(id)) return;
-    const s = (await store.getByIds([id]))[0];
+    const s0 = (await store.getByIds([id]))[0];
+    const s = s0 ? enrichSupplier(s0) : null;
     if (!s) return;
-    const msg = renderTemplate(getTemplate(), s);
+    const msg = renderTemplate(getTemplateForSupplier(s), s);
 
     // if we have @username -> open direct, but text can't be prefilled reliably -> copy it
     if (s.telegram_username) {
       const ok = await copyText(msg);
       if (ok) toast('Текст скопирован — вставь в Telegram');
-      window.open(`https://t.me/${encodeURIComponent(s.telegram_username)}`, '_blank', 'noopener');
+      const uname = encodeURIComponent(String(s.telegram_username || '').replace(/^@+/, ''));
+      openAppDeepLink(`tg://resolve?domain=${uname}`, `https://t.me/${uname}`);
       return;
     }
 
     // no username: copy + open Telegram app/site
     const ok = await copyText(msg);
     if (ok) toast('Текст скопирован — вставь в Telegram');
-    window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    const query = encodeURIComponent([
+      String(s.director_fio || '').trim(),
+      String(s.company_name || '').trim(),
+      String(s.phone_e164 || '').trim(),
+      String(s.email || '').trim(),
+    ].filter(Boolean).join(' '));
+    openAppDeepLink(`tg://search?query=${query}`, 'https://t.me/');
   });
 
   document.addEventListener('click', async (e) => {
@@ -3236,7 +4818,8 @@ function bindCards() {
     if (!btn) return;
     const id = Number(btn.getAttribute('data-id'));
     if (!Number.isFinite(id)) return;
-    const s = (await store.getByIds([id]))[0];
+    const s0 = (await store.getByIds([id]))[0];
+    const s = s0 ? enrichSupplier(s0) : null;
     if (!s) return;
     const query = [
       String(s.director_fio || '').trim(),
@@ -3246,7 +4829,7 @@ function bindCards() {
     ].filter(Boolean).join(' | ');
     const ok = await copyText(query);
     if (ok) toast('Поисковая строка скопирована — вставь в поиск Telegram');
-    window.open('https://web.telegram.org/', '_blank', 'noopener');
+    openAppDeepLink(`tg://search?query=${encodeURIComponent(query)}`, 'https://t.me/');
   });
 
   document.addEventListener('click', async (e) => {
@@ -3254,10 +4837,11 @@ function bindCards() {
     if (!btn) return;
     const id = Number(btn.getAttribute('data-id'));
     if (!Number.isFinite(id)) return;
-    const s = (await store.getByIds([id]))[0];
+    const s0 = (await store.getByIds([id]))[0];
+    const s = s0 ? enrichSupplier(s0) : null;
     if (!s || !s.email) { toast('Нет email'); return; }
-    const msg = renderTemplate(getTemplate(), s);
-    const subject = renderTemplate(getSavedSmtpSubjectTemplate(), s);
+    const msg = renderTemplate(getTemplateForSupplier(s), s);
+    const subject = renderTemplate(getSavedSmtpSubjectTemplate(s), s);
     const url = `mailto:${encodeURIComponent(String(s.email || '').trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msg)}`;
     window.open(url, '_blank', 'noopener');
   });
@@ -3267,7 +4851,8 @@ function bindCards() {
     if (!btn) return;
     const id = Number(btn.getAttribute('data-id'));
     if (!Number.isFinite(id)) return;
-    const s = (await store.getByIds([id]))[0];
+    const s0 = (await store.getByIds([id]))[0];
+    const s = s0 ? enrichSupplier(s0) : null;
     if (!s) return;
     openMailPreview(s);
   });
@@ -3302,22 +4887,8 @@ function bindCards() {
     const ids = Array.from(selected);
     if (!ids.length) { alert('Сначала выберите хотя бы одну карточку.'); return; }
     const suppliers = await store.getByIds(ids);
-    const rows = suppliers.map(s => ({
-  'Компания': s.company_name || '',
-  'ИП': s.ip || '',
-  'ФИО поставщика': s.supplier_fio || '',
-  'ФИО руководителя': s.director_fio || '',
-  'Телефон': s.phone_e164 || '',
-  'Email': s.email || '',
-  'ИНН': s.inn || '',
-  'Адрес': s.address || '',
-  'Название объекта закупки': s.purchase_object_name || '',
-  'Сегмент': (enrichSupplier(s).segment) || '',
-  'Скоринг': (enrichSupplier(s).lead_score) || 0,
-  'FollowUp': s.followup_at || '',
-  'Заметки': s.notes || '',
-}));
-if (kind === 'csv') downloadCsv(rows, 'suppliers_selected.csv');
+    const rows = suppliers.map(mapSupplierExportRow);
+    if (kind === 'csv') downloadCsv(rows, 'suppliers_selected.csv');
     else downloadXls(rows, 'suppliers_selected.xls', 'suppliers_selected');
   }
 
@@ -3332,48 +4903,143 @@ function updateSelectedCountMsg() {
 
 function bindMessage() {
   const ta = document.getElementById('msgTemplate');
+  const taEn = document.getElementById('msgTemplateEn');
   const textTemplateWrap = document.getElementById('textTemplateWrap');
   const sendModeTextBtn = document.getElementById('sendModeTextBtn');
   const sendModeHtmlBtn = document.getElementById('sendModeHtmlBtn');
   const sendModeHint = document.getElementById('sendModeHint');
   const htmlTemplatePreviewWrap = document.getElementById('htmlTemplatePreviewWrap');
   const htmlTemplateEditor = document.getElementById('htmlTemplateEditor');
+  const htmlTemplateEditorEn = document.getElementById('htmlTemplateEditorEn');
   const htmlTemplateLivePreview = document.getElementById('htmlTemplateLivePreview');
   const sendEmailSelectedBtn = document.getElementById('sendEmailSelectedBtn');
+  const keepEmailEligibleBtn = document.getElementById('keepEmailEligibleBtn');
+  const openManualQueueBtn = document.getElementById('openManualQueueBtn');
   const resetHtmlTemplateBtn = document.getElementById('resetHtmlTemplateBtn');
+  const selectedEmailStats = document.getElementById('selectedEmailStats');
   const smtpUser = document.getElementById('smtpUser');
   const smtpPass = document.getElementById('smtpPass');
   const smtpFromName = document.getElementById('smtpFromName');
   const smtpSubjectTpl = document.getElementById('smtpSubjectTpl');
+  const smtpSubjectTplEn = document.getElementById('smtpSubjectTplEn');
+  const templateLocaleMode = document.getElementById('templateLocaleMode');
+  const emailOnlyComplete = document.getElementById('emailOnlyComplete');
+  const emailRequireSourceLink = document.getElementById('emailRequireSourceLink');
   const smtpDailyLimit = document.getElementById('smtpDailyLimit');
-  const smtpDelayMs = document.getElementById('smtpDelayMs');
-  const smtpBatchSize = document.getElementById('smtpBatchSize');
-  const smtpWindowStart = document.getElementById('smtpWindowStart');
-  const smtpWindowEnd = document.getElementById('smtpWindowEnd');
-  const emailLimitHint = document.getElementById('emailLimitHint');
+		  const smtpDelayMs = document.getElementById('smtpDelayMs');
+		  const smtpBatchSize = document.getElementById('smtpBatchSize');
+	  const smtpWindowStart = document.getElementById('smtpWindowStart');
+	  const smtpWindowEnd = document.getElementById('smtpWindowEnd');
+	  const smtpRememberPass = document.getElementById('smtpRememberPass');
+	  const emailLimitHint = document.getElementById('emailLimitHint');
   const saved = localStorage.getItem(APP.TEMPLATE_KEY);
   ta.value = normalizeTemplateText(saved || DEFAULT_TEMPLATE);
+  if (taEn) {
+    taEn.value = normalizeTemplateText(localStorage.getItem(APP.TEMPLATE_EN_KEY) || DEFAULT_TEMPLATE_EN);
+  }
   if (htmlTemplateEditor) {
-    htmlTemplateEditor.value = getEmailHtmlTemplate();
+    htmlTemplateEditor.value = getEmailHtmlTemplate('ru');
+  }
+  if (htmlTemplateEditorEn) {
+    htmlTemplateEditorEn.value = getEmailHtmlTemplate('en');
   }
 
-  try {
-    const smtpSaved = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
-    smtpUser.value = smtpSaved.user || '';
-    smtpPass.value = smtpSaved.pass || '';
-    smtpFromName.value = smtpSaved.fromName || '';
-    smtpSubjectTpl.value = smtpSaved.subjectTpl || 'Предложение по поставкам из Китая — {company_name}';
-    smtpDailyLimit.value = smtpSaved.dailyLimit || 250;
-    smtpDelayMs.value = smtpSaved.delayMs || 1200;
-    if (smtpBatchSize) smtpBatchSize.value = smtpSaved.batchSize || 50;
-    if (smtpWindowStart) smtpWindowStart.value = Number.isFinite(Number(smtpSaved.windowStart)) ? Number(smtpSaved.windowStart) : 9;
-    if (smtpWindowEnd) smtpWindowEnd.value = Number.isFinite(Number(smtpSaved.windowEnd)) ? Number(smtpSaved.windowEnd) : 20;
-  } catch (_) {
-    smtpSubjectTpl.value = 'Предложение по поставкам из Китая — {company_name}';
+  if (templateLocaleMode) {
+    templateLocaleMode.value = getTemplateLocaleMode();
   }
+  const validationSaved = loadEmailValidationSettings();
+  if (emailOnlyComplete) emailOnlyComplete.checked = !!validationSaved.onlyComplete;
+  if (emailRequireSourceLink) emailRequireSourceLink.checked = !!validationSaved.requireSourceLink;
+
+	  try {
+	    const smtpSaved = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
+	    const rememberedPass = !!(smtpSaved.rememberPass || (smtpSaved.rememberPass !== false && smtpSaved.pass));
+	    let sessionPass = '';
+	    try { sessionPass = String(sessionStorage.getItem(APP.SMTP_PASS_SESSION_KEY) || ''); } catch (_) {}
+	    smtpUser.value = smtpSaved.user || '';
+	    smtpPass.value = rememberedPass ? (smtpSaved.pass || sessionPass) : sessionPass;
+	    smtpFromName.value = smtpSaved.fromName || '';
+	    smtpSubjectTpl.value = smtpSaved.subjectTpl || DEFAULT_SMTP_SUBJECT_RU;
+      if (smtpSubjectTplEn) smtpSubjectTplEn.value = smtpSaved.subjectTplEn || DEFAULT_SMTP_SUBJECT_EN;
+	    smtpDailyLimit.value = smtpSaved.dailyLimit || 250;
+	    smtpDelayMs.value = smtpSaved.delayMs || 1200;
+	    if (smtpBatchSize) smtpBatchSize.value = smtpSaved.batchSize || 50;
+	    if (smtpWindowStart) smtpWindowStart.value = Number.isFinite(Number(smtpSaved.windowStart)) ? Number(smtpSaved.windowStart) : 9;
+	    if (smtpWindowEnd) smtpWindowEnd.value = Number.isFinite(Number(smtpSaved.windowEnd)) ? Number(smtpSaved.windowEnd) : 20;
+	    if (smtpRememberPass) smtpRememberPass.checked = rememberedPass;
+	  } catch (_) {
+	    smtpSubjectTpl.value = DEFAULT_SMTP_SUBJECT_RU;
+      if (smtpSubjectTplEn) smtpSubjectTplEn.value = DEFAULT_SMTP_SUBJECT_EN;
+	  }
 
   updateSelectedCountMsg();
   window.addEventListener('focus', updateSelectedCountMsg);
+
+  async function getSelectedSuppliersForMessage() {
+    const ids = Array.from(loadSelectedSet()).map(Number).filter(Number.isFinite);
+    if (!ids.length) return [];
+    return (await store.getByIds(ids)).map(enrichSupplier);
+  }
+
+  function buildSelectedEmailStats(suppliers, validation) {
+    const stats = {
+      total: 0,
+      sendable: 0,
+      emailMissing: 0,
+      incomplete: 0,
+      altContactReady: 0,
+      noContacts: 0,
+      emailReady: 0,
+      emailPlusAlt: 0
+    };
+    (Array.isArray(suppliers) ? suppliers : []).forEach((s) => {
+      stats.total += 1;
+      const cohort = String((s && s.contact_cohort) || '').trim();
+      if (cohort === 'email_ready') stats.emailReady += 1;
+      if (cohort === 'email_plus_alt') stats.emailPlusAlt += 1;
+      if (cohort === 'alt_contact_ready') stats.altContactReady += 1;
+      if (cohort === 'no_contacts') stats.noContacts += 1;
+      if (!isValidEmailAddress(s && s.email)) {
+        stats.emailMissing += 1;
+        return;
+      }
+      const issues = collectCompletenessIssues(s, validation);
+      if (validation.onlyComplete && issues.length) {
+        stats.incomplete += 1;
+        return;
+      }
+      stats.sendable += 1;
+    });
+    return stats;
+  }
+
+  async function refreshSelectedEmailStats() {
+    const validation = loadEmailValidationSettings();
+    const suppliers = await getSelectedSuppliersForMessage();
+    const stats = buildSelectedEmailStats(suppliers, validation);
+    if (selectedEmailStats) {
+      if (!stats.total) {
+        selectedEmailStats.innerHTML = '<div class="muted">Выбери карточки на вкладке «Карточки». Здесь появится разбор: сколько реально уйдёт в email, сколько нужно перевести в ручную работу.</div>';
+      } else {
+        selectedEmailStats.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:800;">Разбор выбранных карточек</div>
+              <div class="muted" style="margin-top:4px;font-size:12px;">
+                total=${stats.total}, sendable=${stats.sendable}, email_missing=${stats.emailMissing}, incomplete=${stats.incomplete}, alt_contact=${stats.altContactReady}, no_contacts=${stats.noContacts}
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span class="badge">Email-ready: ${stats.emailReady + stats.emailPlusAlt}</span>
+              <span class="badge">Ручной контакт: ${stats.altContactReady}</span>
+              <span class="badge">Без контактов: ${stats.noContacts}</span>
+            </div>
+          </div>
+        `;
+      }
+    }
+    return { suppliers, stats, validation };
+  }
 
   let sendMode = (localStorage.getItem(APP.SEND_MODE_KEY) || 'text').trim();
   if (sendMode !== 'html') sendMode = 'text';
@@ -3410,25 +5076,52 @@ function bindMessage() {
       renderHtmlLivePreview();
     });
   }
+  if (templateLocaleMode) {
+    templateLocaleMode.addEventListener('change', () => {
+      const mode = String(templateLocaleMode.value || 'auto').trim().toLowerCase();
+      localStorage.setItem(APP.TEMPLATE_LOCALE_MODE_KEY, (mode === 'ru' || mode === 'en') ? mode : 'auto');
+    });
+  }
+  const persistValidationSettings = () => saveEmailValidationSettings({
+    onlyComplete: !!(emailOnlyComplete && emailOnlyComplete.checked),
+    requireSourceLink: !!(emailRequireSourceLink && emailRequireSourceLink.checked)
+  });
+  if (emailOnlyComplete) emailOnlyComplete.addEventListener('change', async () => {
+    persistValidationSettings();
+    await refreshSelectedEmailStats();
+  });
+  if (emailRequireSourceLink) emailRequireSourceLink.addEventListener('change', async () => {
+    persistValidationSettings();
+    await refreshSelectedEmailStats();
+  });
   renderSendModeUi();
+  refreshSelectedEmailStats();
 
-  function getSmtpSettings() {
-    return {
-      user: String(smtpUser.value || '').trim(),
-      pass: String(smtpPass.value || '').trim(),
-      fromName: String(smtpFromName.value || '').trim(),
-      subjectTpl: String(smtpSubjectTpl.value || '').trim() || 'Предложение по поставкам из Китая — {company_name}',
-      dailyLimit: Number(smtpDailyLimit.value || 250),
+	  function getSmtpSettings() {
+	    return {
+	      user: String(smtpUser.value || '').trim(),
+	      pass: String(smtpPass.value || '').trim(),
+	      rememberPass: !!(smtpRememberPass && smtpRememberPass.checked),
+	      fromName: String(smtpFromName.value || '').trim(),
+	      subjectTpl: String(smtpSubjectTpl.value || '').trim() || DEFAULT_SMTP_SUBJECT_RU,
+        subjectTplEn: String((smtpSubjectTplEn && smtpSubjectTplEn.value) || '').trim() || DEFAULT_SMTP_SUBJECT_EN,
+	      dailyLimit: Number(smtpDailyLimit.value || 250),
       delayMs: Number(smtpDelayMs.value || 1200),
       batchSize: Number((smtpBatchSize && smtpBatchSize.value) || 50),
       windowStart: Number((smtpWindowStart && smtpWindowStart.value) || 9),
       windowEnd: Number((smtpWindowEnd && smtpWindowEnd.value) || 20),
     };
-  }
+	  }
 
-  function saveSmtpSettings() {
-    localStorage.setItem(APP.SMTP_KEY, JSON.stringify(getSmtpSettings()));
-  }
+	  function saveSmtpSettings() {
+	    const s = getSmtpSettings();
+	    const toStore = { ...s, pass: s.rememberPass ? s.pass : '' };
+	    localStorage.setItem(APP.SMTP_KEY, JSON.stringify(toStore));
+	    try {
+	      if (s.pass) sessionStorage.setItem(APP.SMTP_PASS_SESSION_KEY, s.pass);
+	      else sessionStorage.removeItem(APP.SMTP_PASS_SESSION_KEY);
+	    } catch (_) {}
+	  }
 
   function withinSendWindow(s) {
     const h = new Date().getHours();
@@ -3492,15 +5185,15 @@ function bindMessage() {
     toast(`Follow-up: 3д=${set3}, 7д=${set7}`);
   }
 
-  async function checkEmailLimit(requestedCount) {
-    const s = getSmtpSettings();
-    const base = ocrHelperBase();
-    const r = await fetch(base + '/email/check-limit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requested: Number(requestedCount || 0),
-        dailyLimit: Number(s.dailyLimit || 250),
+	  async function checkEmailLimit(requestedCount) {
+	    const s = getSmtpSettings();
+	    const base = ocrHelperBase();
+	    const r = await fetch(base + '/email/check-limit', {
+	      method: 'POST',
+	      headers: { 'Content-Type': 'application/json', 'X-SB-Client': 'vadim-filter-tool' },
+	      body: JSON.stringify({
+	        requested: Number(requestedCount || 0),
+	        dailyLimit: Number(s.dailyLimit || 250),
       })
     });
     const j = await r.json();
@@ -3513,13 +5206,30 @@ function bindMessage() {
   document.getElementById('saveTemplateBtn').addEventListener('click', () => {
     localStorage.setItem(APP.TEMPLATE_KEY, normalizeTemplateText(ta.value || ''));
     ta.value = normalizeTemplateText(ta.value || '');
+    if (taEn) {
+      localStorage.setItem(APP.TEMPLATE_EN_KEY, normalizeTemplateText(taEn.value || ''));
+      taEn.value = normalizeTemplateText(taEn.value || '');
+    }
     if (htmlTemplateEditor) {
       localStorage.setItem(APP.TEMPLATE_HTML_KEY, String(htmlTemplateEditor.value || '').trim() || DEFAULT_EMAIL_HTML_TEMPLATE);
       htmlTemplateEditor.value = String(localStorage.getItem(APP.TEMPLATE_HTML_KEY) || DEFAULT_EMAIL_HTML_TEMPLATE);
       renderHtmlLivePreview();
     }
+    if (htmlTemplateEditorEn) {
+      localStorage.setItem(APP.TEMPLATE_HTML_EN_KEY, String(htmlTemplateEditorEn.value || '').trim() || DEFAULT_EMAIL_HTML_TEMPLATE_EN);
+      htmlTemplateEditorEn.value = String(localStorage.getItem(APP.TEMPLATE_HTML_EN_KEY) || DEFAULT_EMAIL_HTML_TEMPLATE_EN);
+    }
+    if (templateLocaleMode) {
+      const mode = String(templateLocaleMode.value || 'auto').trim().toLowerCase();
+      localStorage.setItem(APP.TEMPLATE_LOCALE_MODE_KEY, (mode === 'ru' || mode === 'en') ? mode : 'auto');
+    }
+    saveEmailValidationSettings({
+      onlyComplete: !!(emailOnlyComplete && emailOnlyComplete.checked),
+      requireSourceLink: !!(emailRequireSourceLink && emailRequireSourceLink.checked)
+    });
     saveSmtpSettings();
     updateSelectedCountMsg();
+    refreshSelectedEmailStats();
     toast('Сохранено');
   });
 
@@ -3528,6 +5238,12 @@ function bindMessage() {
       if (htmlTemplateEditor) {
         htmlTemplateEditor.value = DEFAULT_EMAIL_HTML_TEMPLATE;
         localStorage.setItem(APP.TEMPLATE_HTML_KEY, DEFAULT_EMAIL_HTML_TEMPLATE);
+      }
+      if (htmlTemplateEditorEn) {
+        htmlTemplateEditorEn.value = DEFAULT_EMAIL_HTML_TEMPLATE_EN;
+        localStorage.setItem(APP.TEMPLATE_HTML_EN_KEY, DEFAULT_EMAIL_HTML_TEMPLATE_EN);
+      }
+      if (htmlTemplateEditor) {
         renderHtmlLivePreview();
         toast('HTML шаблон сброшен на стандартный');
       }
@@ -3547,8 +5263,9 @@ function bindMessage() {
     const ids = Array.from(loadSelectedSet());
     if (!ids.length) { alert('Сначала выберите карточки на вкладке “Карточки”.'); return; }
     const suppliers = await store.getByIds(ids);
-    const tpl = normalizeTemplateText(ta.value || '');
     const rows = suppliers.map(s => ({
+      contact_cohort: contactCohortLabel(enrichSupplier(s).contact_cohort),
+      contact_channels: (enrichSupplier(s).contact_channels || []).join(', '),
       company_name: s.company_name || '',
       director_fio: s.director_fio || '',
       phone_e164: s.phone_e164 || '',
@@ -3556,11 +5273,14 @@ function bindMessage() {
       inn: s.inn || '',
       address: s.address || '',
       source_file: s.source_file || '',
+      source: s.source || '',
+      workspace: enrichSupplier(s).workspace || '',
+      geo_bucket: enrichSupplier(s).geo_bucket || '',
       status: s.status || '',
       segment: enrichSupplier(s).segment || '',
       lead_score: enrichSupplier(s).lead_score || 0,
       followup_at: s.followup_at || '',
-      message: renderTemplate(tpl, s),
+      message: renderTemplate(getTemplateForSupplier(s), s),
     }));
     if (kind === 'csv') downloadCsv(rows, 'messages_selected.csv');
     else downloadXls(rows, 'messages_selected.xls', 'messages_selected');
@@ -3571,13 +5291,52 @@ function bindMessage() {
 
   document.getElementById('checkEmailLimitBtn').addEventListener('click', async () => {
     try {
-      const ids = Array.from(loadSelectedSet());
-      await checkEmailLimit(ids.length);
+      const { stats } = await refreshSelectedEmailStats();
+      await checkEmailLimit(stats.sendable);
       toast('Лимит проверен');
     } catch (e) {
       toast('Ошибка лимита: ' + String(e && e.message ? e.message : e));
     }
   });
+
+  if (keepEmailEligibleBtn) {
+    keepEmailEligibleBtn.addEventListener('click', async () => {
+      const { suppliers, validation } = await refreshSelectedEmailStats();
+      const ids = suppliers
+        .filter((s) => isValidEmailAddress(s.email))
+        .filter((s) => !validation.onlyComplete || collectCompletenessIssues(s, validation).length === 0)
+        .map((s) => Number(s.id))
+        .filter(Number.isFinite);
+      selected = new Set(ids);
+      saveSelectedSet(selected);
+      updateSelectedCountMsg();
+      await refreshSelectedEmailStats();
+      if (currentRoute().page === 'cards') await renderCards();
+      toast(`Оставлено email-готовых: ${ids.length}`);
+    });
+  }
+
+  if (openManualQueueBtn) {
+    openManualQueueBtn.addEventListener('click', async () => {
+      const { suppliers } = await refreshSelectedEmailStats();
+      const ids = suppliers
+        .filter((s) => !isValidEmailAddress(s.email))
+        .filter((s) => String(s.contact_cohort || '') === 'alt_contact_ready')
+        .map((s) => Number(s.id))
+        .filter(Number.isFinite);
+      if (!ids.length) {
+        alert('Среди выбранных карточек нет лидов без email, но с телефоном / WhatsApp / Telegram.');
+        return;
+      }
+      selected = new Set(ids);
+      saveSelectedSet(selected);
+      localStorage.removeItem(APP.QUEUE_POS_KEY);
+      updateSelectedCountMsg();
+      await refreshSelectedEmailStats();
+      window.location.hash = '#queue';
+      toast(`В ручную очередь отправлено: ${ids.length}`);
+    });
+  }
 
   document.getElementById('sendEmailSelectedBtn').addEventListener('click', async () => {
     try {
@@ -3590,24 +5349,57 @@ function bindMessage() {
         return;
       }
 
-      const suppliers = await store.getByIds(ids);
-      const tpl = normalizeTemplateText(ta.value || '');
-      const tplHtml = getEmailHtmlTemplate();
-      const subjectTpl = smtp.subjectTpl || 'Предложение по поставкам из Китая — {company_name}';
+      const suppliers = (await store.getByIds(ids)).map(enrichSupplier);
       const useHtml = sendMode === 'html';
-      const messages = suppliers
-        .filter(s => !!(s && s.email))
-        .map(s => ({
+      const validation = {
+        onlyComplete: !!(emailOnlyComplete && emailOnlyComplete.checked),
+        requireSourceLink: !!(emailRequireSourceLink && emailRequireSourceLink.checked)
+      };
+      saveEmailValidationSettings(validation);
+
+      const skipped = [];
+      const messages = [];
+      for (const s of suppliers) {
+        const issues = collectCompletenessIssues(s, validation);
+        if (!isValidEmailAddress(s.email)) {
+          skipped.push({ supplier: s, issues: ['email'] });
+          continue;
+        }
+        if (validation.onlyComplete && issues.length) {
+          skipped.push({ supplier: s, issues });
+          continue;
+        }
+        const textTpl = getTemplateForSupplier(s);
+        const htmlTpl = useHtml ? getEmailHtmlTemplateForSupplier(s) : '';
+        const subjectTpl = getSubjectTemplateForSupplier(s, smtp);
+        messages.push({
           to: String(s.email || '').trim(),
           subject: renderTemplate(chooseSubjectVariant(subjectTpl, s), s),
-          text: renderTemplate(tpl, s),
-          html: useHtml ? renderTemplate(tplHtml, s) : '',
-          supplierId: s.id
-        }));
+          text: renderTemplate(textTpl, s),
+          html: useHtml ? renderTemplate(htmlTpl, s) : '',
+          supplierId: s.id,
+          subjectTplUsed: subjectTpl
+        });
+      }
 
       if (!messages.length) {
-        alert('У выбранных карточек нет Email.');
+        const sample = skipped.slice(0, 3).map((x) => {
+          const name = String((x && x.supplier && x.supplier.company_name) || `ID ${x && x.supplier && x.supplier.id ? x.supplier.id : '?'}`);
+          const issueText = Array.isArray(x && x.issues) ? x.issues.join(', ') : '';
+          return `${name}: ${issueText.slice(0, 80)}`;
+        }).join('\n');
+        alert(`Нет карточек, подходящих под отправку.\nПроверьте Email и полноту карточек.${sample ? `\n\nПример:\n${sample}` : ''}`);
         return;
+      }
+
+      if (skipped.length) {
+        const sample = skipped.slice(0, 3).map((x) => {
+          const name = String((x && x.supplier && x.supplier.company_name) || `ID ${x && x.supplier && x.supplier.id ? x.supplier.id : '?'}`);
+          const issueText = Array.isArray(x && x.issues) ? x.issues.join(', ') : '';
+          return `${name}: ${issueText}`;
+        }).join('; ');
+        const manualQueueCandidates = skipped.filter((x) => String((x && x.supplier && x.supplier.contact_cohort) || '') === 'alt_contact_ready').length;
+        emailLimitHint.textContent = `Пропущено карточек из-за валидации: ${skipped.length}. Ручной контакт без email: ${manualQueueCandidates}. ${sample}`;
       }
 
       if (!withinSendWindow(smtp)) {
@@ -3623,13 +5415,19 @@ function bindMessage() {
         if (!proceed) return;
       }
 
-      const batchSize = Math.max(1, Number(smtp.batchSize || 50));
-      const actualLimit = Math.max(0, Number(lim.remaining || 0));
-      const actualCount = Math.min(messages.length, batchSize, (actualLimit || batchSize));
-      const batch = messages.slice(0, actualCount);
+	      const batchSize = Math.max(1, Number(smtp.batchSize || 50));
+	      const actualLimit = Math.max(0, Number(lim.remaining || 0));
+	      const actualCount = Math.min(messages.length, batchSize, actualLimit);
+	      if (actualCount <= 0) {
+	        alert('Дневной лимит отправки исчерпан. Увеличьте лимит или дождитесь нового дня.');
+	        return;
+	      }
+	      const batch = messages.slice(0, actualCount);
 
-      const proceedSend = confirm(`Отправить сейчас ${batch.length} писем с ${smtp.user}? (всего выбрано ${messages.length})`);
+      const proceedSend = confirm(`Отправить сейчас ${batch.length} писем с ${smtp.user}? (подготовлено ${messages.length}, пропущено ${skipped.length})`);
       if (!proceedSend) return;
+      const proceedSendFinal = confirm(`Точно-преточно отправить ${batch.length} писем?\nЭто реальная рассылка с ящика ${smtp.user}.\nНажмите "Отмена", если хотите перепроверить получателей.`);
+      if (!proceedSendFinal) return;
 
       const j = await sendBatchViaHelper({
         smtp,
@@ -3644,9 +5442,11 @@ function bindMessage() {
 
       const logEntries = [];
       const byEmail = new Map(suppliers.map(s => [String((s && s.email) || '').trim().toLowerCase(), s]));
+      const byEmailMessage = new Map(messages.map(m => [String((m && m.to) || '').trim().toLowerCase(), m]));
       for (const r1 of (j.results || [])) {
         const emailKey = String((r1 && r1.to) || '').trim().toLowerCase();
         const sup = byEmail.get(emailKey) || null;
+        const msgMeta = byEmailMessage.get(emailKey) || null;
         if (r1 && r1.ok && sup && sup.id) {
           await store.setStatus(sup.id, 'sent');
         }
@@ -3655,7 +5455,7 @@ function bindMessage() {
           ok: !!(r1 && r1.ok),
           to: (r1 && r1.to) || '',
           error: (r1 && r1.error) || '',
-          subjectTpl,
+          subjectTpl: msgMeta ? (msgMeta.subjectTplUsed || '') : '',
           supplierId: sup ? sup.id : null,
           company_name: sup ? (sup.company_name || '') : ''
         });
@@ -3664,6 +5464,7 @@ function bindMessage() {
 
       emailLimitHint.textContent = `Email отправка: sent=${j.sent}, failed=${j.failed}, skippedByLimit=${j.skippedByLimit}, осталось=${j.remaining}.${errPart}`;
       toast(`Email: отправлено ${j.sent}, ошибок ${j.failed}`);
+      await refreshSelectedEmailStats();
       await renderCards();
     } catch (e) {
       toast('Ошибка отправки Email: ' + String(e && e.message ? e.message : e));
@@ -3763,11 +5564,13 @@ function bindCampaigns() {
 
   async function buildCampaignMessages(limitCount, includeFailedSupplierIds = null) {
     const smtp = JSON.parse(localStorage.getItem(APP.SMTP_KEY) || '{}');
+    if (!smtp.pass) {
+      try { smtp.pass = String(sessionStorage.getItem(APP.SMTP_PASS_SESSION_KEY) || '').trim(); } catch (_) {}
+    }
     if (!smtp.user || !smtp.pass) throw new Error('Заполните SMTP в вкладке "Сообщение"');
 
-    const template = normalizeTemplateText(localStorage.getItem(APP.TEMPLATE_KEY) || DEFAULT_TEMPLATE);
-    const tplHtml = getEmailHtmlTemplate();
     const useHtml = String(localStorage.getItem(APP.SEND_MODE_KEY) || 'text') === 'html';
+    const validation = loadEmailValidationSettings();
 
     let suppliers = [];
     if (includeFailedSupplierIds && includeFailedSupplierIds.length) {
@@ -3784,22 +5587,29 @@ function bindCampaigns() {
 
     const filtered = suppliers
       .map(enrichSupplier)
-      .filter(s => s && s.email)
+      .filter(s => s && isValidEmailAddress(s.email))
       .filter(s => !blockedStatuses.has(String(s.status || '')))
       .filter(s => !isSuppressedEmail(s.email, suppression))
-      .filter(s => !recentlySentToDomain(emailDomain(s.email), camp.cooldownHours));
+      .filter(s => !recentlySentToDomain(emailDomain(s.email), camp.cooldownHours))
+      .filter((s) => {
+        if (!validation.onlyComplete) return true;
+        return collectCompletenessIssues(s, validation).length === 0;
+      });
 
     const maxCount = Math.max(1, Number(limitCount || camp.batchSize || 25));
     const chosen = filtered.slice(0, maxCount);
 
-    const messages = chosen.map(s => ({
-      to: String(s.email || '').trim(),
-      subject: renderTemplate(chooseSubjectVariant(String(smtp.subjectTpl || 'Предложение по поставкам из Китая — {company_name}'), s), s),
-      text: renderTemplate(template, s),
-      html: useHtml ? renderTemplate(tplHtml, s) : '',
-      supplierId: s.id,
-      company_name: s.company_name || ''
-    }));
+    const messages = chosen.map(s => {
+      const subjectTpl = getSubjectTemplateForSupplier(s, smtp);
+      return {
+        to: String(s.email || '').trim(),
+        subject: renderTemplate(chooseSubjectVariant(subjectTpl, s), s),
+        text: renderTemplate(getTemplateForSupplier(s), s),
+        html: useHtml ? renderTemplate(getEmailHtmlTemplateForSupplier(s), s) : '',
+        supplierId: s.id,
+        company_name: s.company_name || ''
+      };
+    });
 
     return { smtp, messages };
   }
@@ -3964,7 +5774,7 @@ function bindQueue() {
   document.getElementById('copyBtn').addEventListener('click', async () => {
     if (!queueSuppliers.length) return;
     const s = queueSuppliers[qIdx];
-    const msg = renderTemplate(getTemplate(), s);
+    const msg = renderTemplate(getTemplateForSupplier(s), s);
     const ok = await copyText(msg);
     toast(ok ? 'Скопировано' : 'Не удалось скопировать');
   });
@@ -3995,24 +5805,44 @@ function bindQueue() {
 }
 
 function bindTopExports() {
+  const mapExportRow = (s0) => {
+    const s = enrichSupplier(s0 || {});
+    return {
+      'Когорта контакта': contactCohortLabel(s.contact_cohort),
+      'Каналы контакта': (s.contact_channels || []).join(', '),
+      'Компания': s.company_name || '',
+      'ИП': s.ip || '',
+      'ФИО поставщика': s.supplier_fio || '',
+      'ФИО руководителя': s.director_fio || '',
+      'Телефон': s.phone_e164 || '',
+      'Email': s.email || '',
+      'ИНН': s.inn || '',
+      'Адрес': s.address || '',
+      'Название объекта закупки': s.purchase_object_name || '',
+      'Источник лида': s.source || '',
+      'Workspace': enrichSupplier(s).workspace || '',
+      'Гео': enrichSupplier(s).geo_bucket || '',
+      'Дедлайн': s.deadline || '',
+      'CPV': s.cpv || '',
+      'Бюджет': formatBudgetDisplay(s.budget, s.budget_currency),
+      'Сегмент': s.segment || '',
+      'Скоринг': s.lead_score || 0,
+      'FollowUp': s.followup_at || '',
+      'Заметки': s.notes || '',
+    };
+  };
+
+  document.getElementById('downloadAllExcel').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const suppliers = await store.getAll();
+    const rows = suppliers.map(mapExportRow);
+    downloadXls(rows, 'suppliers_all.xls', 'suppliers_all');
+  });
+
   document.getElementById('downloadAllCsv').addEventListener('click', async (e) => {
     e.preventDefault();
     const suppliers = await store.getAll();
-    const rows = suppliers.map(s => ({
-  'Компания': s.company_name || '',
-  'ИП': s.ip || '',
-  'ФИО поставщика': s.supplier_fio || '',
-  'ФИО руководителя': s.director_fio || '',
-  'Телефон': s.phone_e164 || '',
-  'Email': s.email || '',
-  'ИНН': s.inn || '',
-  'Адрес': s.address || '',
-  'Название объекта закупки': s.purchase_object_name || '',
-  'Сегмент': (enrichSupplier(s).segment) || '',
-  'Скоринг': (enrichSupplier(s).lead_score) || 0,
-  'FollowUp': s.followup_at || '',
-  'Заметки': s.notes || '',
-}));
+    const rows = suppliers.map(mapExportRow);
 downloadCsv(rows, 'suppliers_all.csv');
   });
 
@@ -4068,6 +5898,13 @@ downloadCsv(rows, 'suppliers_all.csv');
 
   // ensure defaults in storage
   if (!localStorage.getItem(APP.TEMPLATE_KEY)) localStorage.setItem(APP.TEMPLATE_KEY, DEFAULT_TEMPLATE);
+  if (!localStorage.getItem(APP.TEMPLATE_EN_KEY)) localStorage.setItem(APP.TEMPLATE_EN_KEY, DEFAULT_TEMPLATE_EN);
+  if (!localStorage.getItem(APP.TEMPLATE_HTML_KEY)) localStorage.setItem(APP.TEMPLATE_HTML_KEY, DEFAULT_EMAIL_HTML_TEMPLATE);
+  if (!localStorage.getItem(APP.TEMPLATE_HTML_EN_KEY)) localStorage.setItem(APP.TEMPLATE_HTML_EN_KEY, DEFAULT_EMAIL_HTML_TEMPLATE_EN);
+  if (!localStorage.getItem(APP.TEMPLATE_LOCALE_MODE_KEY)) localStorage.setItem(APP.TEMPLATE_LOCALE_MODE_KEY, 'auto');
+  if (!localStorage.getItem(APP.EMAIL_VALIDATE_KEY)) {
+    localStorage.setItem(APP.EMAIL_VALIDATE_KEY, JSON.stringify({ onlyComplete: true, requireSourceLink: false }));
+  }
   applyTopLogoFromUrl();
 
   // When opening without hash

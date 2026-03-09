@@ -1,6 +1,6 @@
 {
   "name": "vadim-ocr-helper",
-  "version": "11.0.0",
+  "version": "12.2.0",
   "private": true,
   "main": "ocr_helper_server.js",
   "scripts": {

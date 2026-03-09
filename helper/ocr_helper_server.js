@@ -14,17 +14,36 @@ const fs = require("fs");
 const express = require("express");
 const multer = require("multer");
 const nodemailer = require("nodemailer");
-const canvasMod = require("canvas");
-const { createCanvas, DOMMatrix, ImageData, Path2D } = canvasMod;
+const { createLeadCollector } = require("./lead_collector_server");
 
-// Provide DOMMatrix / ImageData / Path2D before loading pdfjs
-if (typeof global.DOMMatrix === "undefined" && DOMMatrix) global.DOMMatrix = DOMMatrix;
-if (typeof global.ImageData === "undefined" && ImageData) global.ImageData = ImageData;
-if (typeof global.Path2D === "undefined" && Path2D) global.Path2D = Path2D;
+const APP_VERSION = "12.2.0";
+let canvasAvailable = false;
+let pdfjsAvailable = false;
+let canvasLoadError = null;
+let pdfjsLoadError = null;
+let createCanvas = null;
+
+try {
+  const canvasMod = require("canvas");
+  const { createCanvas: cc, DOMMatrix, ImageData, Path2D } = canvasMod;
+  createCanvas = cc;
+  if (typeof global.DOMMatrix === "undefined" && DOMMatrix) global.DOMMatrix = DOMMatrix;
+  if (typeof global.ImageData === "undefined" && ImageData) global.ImageData = ImageData;
+  if (typeof global.Path2D === "undefined" && Path2D) global.Path2D = Path2D;
+  canvasAvailable = typeof createCanvas === "function";
+} catch (e) {
+  canvasLoadError = e;
+}
+
 const { createWorker } = require("tesseract.js");
 
-// CJS legacy build (pdfjs-dist@3.x)
-const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+let pdfjsLib = null;
+try {
+  pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+  pdfjsAvailable = !!pdfjsLib;
+} catch (e) {
+  pdfjsLoadError = e;
+}
 
 // ---- Config
 const HOST = process.env.OCR_HOST || "127.0.0.1";
@@ -35,11 +54,14 @@ const MAX_PAGES = Number(process.env.OCR_MAX_PAGES || "25");
 const DEFAULT_LANG = process.env.OCR_LANG || "rus+eng";
 const MIN_TEXT_CHARS_FASTPATH = Number(process.env.OCR_MIN_TEXT_CHARS_FASTPATH || "40");
 
+const ROOT_DIR = path.join(__dirname, "..");
 const CACHE_DIR = path.join(__dirname, ".cache");
 const TESSDATA_DIR = path.join(__dirname, "tessdata");
+const LOGS_DIR = path.join(ROOT_DIR, "logs");
 const LANG_PATH_ENV = (process.env.OCR_LANG_PATH || "").trim();
 const EMAIL_RATE_STATE = path.join(CACHE_DIR, "email_rate_state.json");
 const ROOT_LOGO_PATH = path.join(__dirname, "..", "logo.png");
+const leadCollector = createLeadCollector({ cacheDir: CACHE_DIR });
 
 function resolveLangPath() {
   if (LANG_PATH_ENV) return LANG_PATH_ENV;
@@ -109,16 +131,272 @@ app.use((req, res, next) => {
   next();
 });
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  const o = String(origin).trim().toLowerCase();
+  if (o === "null") return true; // file://
+  return /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(o);
+}
+
+function isTrustedClient(req) {
+  return String(req.headers["x-sb-client"] || "").trim().toLowerCase() === "vadim-filter-tool";
+}
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  const origin = req.headers.origin ? String(req.headers.origin) : "";
+  if (origin && !isAllowedOrigin(origin)) {
+    if (req.method === "OPTIONS") return res.sendStatus(403);
+    return res.status(403).json({ ok: false, error: "forbidden_origin" });
+  }
+  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SB-Client");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
-app.get("/health", (req, res) => res.json({ ok: true, version: "12.0.0" }));
+app.get("/health", (req, res) => res.json({
+  ok: true,
+  version: APP_VERSION,
+  deps: { canvas: canvasAvailable, pdfjs: pdfjsAvailable },
+  leads: leadCollector.health()
+}));
+
+function safeFileInfo(filePath) {
+  try {
+    const st = fs.statSync(filePath);
+    return {
+      name: path.basename(filePath),
+      path: filePath,
+      size: st.size,
+      mtime: st.mtime.toISOString()
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function readTextTail(filePath, maxChars = 16000) {
+  try {
+    const text = String(fs.readFileSync(filePath, "utf8") || "").replace(/\u0000+/g, "");
+    if (!text) return "";
+    return text.length > maxChars ? text.slice(-maxChars) : text;
+  } catch (_) {
+    return "";
+  }
+}
+
+function listRecentFiles(dirPath, matcher, limit = 5) {
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+      .filter((entry) => entry && entry.isFile())
+      .map((entry) => path.join(dirPath, entry.name))
+      .filter((fullPath) => !matcher || matcher.test(path.basename(fullPath)))
+      .map((fullPath) => ({ fullPath, info: safeFileInfo(fullPath) }))
+      .filter((x) => !!x.info)
+      .sort((a, b) => String(b.info.mtime).localeCompare(String(a.info.mtime)))
+      .slice(0, limit);
+    return entries.map((x) => ({
+      ...x.info,
+      tail: readTextTail(x.fullPath)
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+function listCacheState() {
+  try {
+    return fs.readdirSync(CACHE_DIR, { withFileTypes: true })
+      .filter((entry) => entry && entry.isFile())
+      .map((entry) => safeFileInfo(path.join(CACHE_DIR, entry.name)))
+      .filter(Boolean)
+      .sort((a, b) => String(b.mtime).localeCompare(String(a.mtime)));
+  } catch (_) {
+    return [];
+  }
+}
+
+function buildSupportDiagnostics() {
+  return {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    app: {
+      version: APP_VERSION,
+      pid: process.pid,
+      host: HOST,
+      port: PORT,
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      uptimeSec: Math.round(process.uptime()),
+      cwd: process.cwd()
+    },
+    deps: {
+      canvas: canvasAvailable,
+      pdfjs: pdfjsAvailable,
+      canvasError: canvasAvailable ? "" : stringifyErr(canvasLoadError),
+      pdfjsError: pdfjsAvailable ? "" : stringifyErr(pdfjsLoadError)
+    },
+    paths: {
+      rootDir: ROOT_DIR,
+      cacheDir: CACHE_DIR,
+      tessdataDir: TESSDATA_DIR,
+      logsDir: LOGS_DIR
+    },
+    leads: leadCollector.health(),
+    emailRate: readRateState(),
+    cacheFiles: listCacheState(),
+    logs: {
+      recentStartLogs: listRecentFiles(LOGS_DIR, /^start_.*\.log$/i, 4),
+      recentHelperLogs: listRecentFiles(LOGS_DIR, /^helper_.*\.log$/i, 4),
+      legacyHelperLog: (() => {
+        const fullPath = path.join(__dirname, "ocr_server.log");
+        const info = safeFileInfo(fullPath);
+        if (!info) return null;
+        return { ...info, tail: readTextTail(fullPath) };
+      })()
+    }
+  };
+}
+
+function parseCsvList(v) {
+  if (!v) return [];
+  return String(v)
+    .split(",")
+    .map((x) => String(x || "").trim())
+    .filter(Boolean);
+}
+
+app.get("/leads/health", (req, res) => {
+  if (!isTrustedClient(req)) {
+    return res.status(403).json({ ok: false, error: "forbidden_client" });
+  }
+  return res.json({ ok: true, health: leadCollector.health() });
+});
+
+app.get("/support/diagnostics", (req, res) => {
+  try {
+    if (!isTrustedClient(req)) {
+      return res.status(403).json({ ok: false, error: "forbidden_client" });
+    }
+    return res.json(buildSupportDiagnostics());
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: stringifyErr(e) });
+  }
+});
+
+app.get("/leads/list", (req, res) => {
+  try {
+    if (!isTrustedClient(req)) {
+      return res.status(403).json({ ok: false, error: "forbidden_client" });
+    }
+    const q = req.query || {};
+    const limit = parsePositiveInt(q.limit, 100);
+    const sources = parseCsvList(q.sources);
+    const geoBucket = String(q.geoBucket || "").trim();
+    const out = leadCollector.list({ limit, sources, geoBucket });
+    return res.json(out);
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: stringifyErr(e) });
+  }
+});
+
+app.post("/leads/collect", async (req, res) => {
+  try {
+    if (!isTrustedClient(req)) {
+      return res.status(403).json({ ok: false, error: "forbidden_client" });
+    }
+    const body = req.body || {};
+    const sources = Array.isArray(body.sources)
+      ? body.sources.map((x) => String(x || "").trim()).filter(Boolean)
+      : [];
+    const limit = parsePositiveInt(body.limit, 60);
+    const geoBucket = String(body.geoBucket || "CYPRUS_EN").trim() || "CYPRUS_EN";
+    const timeoutMs = parsePositiveInt(body.timeoutMs, 20000);
+    const deepParse = body.deepParse !== false;
+    const detailProbeCount = parseNonNegativeInt(body.detailProbeCount, 10);
+    const detailTimeoutMs = parsePositiveInt(body.detailTimeoutMs, 9000);
+    const detailConcurrency = parsePositiveInt(body.detailConcurrency, 3);
+    const cpvPriority = Array.isArray(body.cpvPriority)
+      ? body.cpvPriority.map((x) => String(x || "").trim()).filter(Boolean)
+      : undefined;
+    const cyprusMaxPages = parsePositiveInt(body.cyprusMaxPages, 5);
+
+    const out = await leadCollector.collect({
+      sources,
+      limit,
+      geoBucket,
+      timeoutMs,
+      deepParse,
+      detailProbeCount,
+      detailTimeoutMs,
+      detailConcurrency,
+      cpvPriority,
+      ted: body.ted || {},
+      cyprus: { maxPages: cyprusMaxPages },
+      zakupki: body.zakupki || {},
+      goszakup: body.goszakup || {},
+      icetrade: body.icetrade || {}
+    });
+    return res.json(out);
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: stringifyErr(e) });
+  }
+});
+
+app.post("/leads/diagnose", async (req, res) => {
+  try {
+    if (!isTrustedClient(req)) {
+      return res.status(403).json({ ok: false, error: "forbidden_client" });
+    }
+    const body = req.body || {};
+    const sources = Array.isArray(body.sources)
+      ? body.sources.map((x) => String(x || "").trim()).filter(Boolean)
+      : [];
+    const limit = parsePositiveInt(body.limit, 24);
+    const geoBucket = String(body.geoBucket || "CYPRUS_EN").trim() || "CYPRUS_EN";
+    const timeoutMs = parsePositiveInt(body.timeoutMs, 12000);
+    const deepParse = body.deepParse === true;
+    const detailProbeCount = parseNonNegativeInt(body.detailProbeCount, 3);
+    const detailTimeoutMs = parsePositiveInt(body.detailTimeoutMs, 7000);
+    const detailConcurrency = parsePositiveInt(body.detailConcurrency, 2);
+    const cyprusMaxPages = parsePositiveInt(body.cyprusMaxPages, 2);
+
+    const out = await leadCollector.diagnose({
+      sources,
+      limit,
+      geoBucket,
+      timeoutMs,
+      deepParse,
+      detailProbeCount,
+      detailTimeoutMs,
+      detailConcurrency,
+      ted: body.ted || {},
+      cyprus: { maxPages: cyprusMaxPages },
+      zakupki: body.zakupki || {},
+      goszakup: body.goszakup || {},
+      icetrade: body.icetrade || {}
+    });
+    return res.json(out);
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: stringifyErr(e) });
+  }
+});
+
+app.post("/leads/clear", (req, res) => {
+  try {
+    if (!isTrustedClient(req)) {
+      return res.status(403).json({ ok: false, error: "forbidden_client" });
+    }
+    const body = req.body || {};
+    const out = leadCollector.clear({ metaOnly: !!body.metaOnly });
+    return res.json(out);
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: stringifyErr(e) });
+  }
+});
 
 function dayKeyUtc() {
   return new Date().toISOString().slice(0, 10);
@@ -164,7 +442,16 @@ function parsePositiveInt(v, fallback) {
   return Math.floor(n);
 }
 
+function parseNonNegativeInt(v, fallback) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return Math.floor(n);
+}
+
 app.post("/email/check-limit", (req, res) => {
+  if (!isTrustedClient(req)) {
+    return res.status(403).json({ ok: false, error: "forbidden_client" });
+  }
   const body = req.body || {};
   const requested = parsePositiveInt(body.requested, 0);
   const dailyLimit = parsePositiveInt(body.dailyLimit, 300);
@@ -183,6 +470,9 @@ app.post("/email/check-limit", (req, res) => {
 app.post("/email/send-batch", async (req, res) => {
   const t0 = nowMs();
   try {
+    if (!isTrustedClient(req)) {
+      return res.status(403).json({ ok: false, error: "forbidden_client" });
+    }
     const body = req.body || {};
     const smtp = body.smtp || {};
     const messages = Array.isArray(body.messages) ? body.messages : [];
@@ -422,6 +712,12 @@ async function ocrImageBuffer(buf, lang) {
 }
 
 async function handlePdf(buf, pagesStr, lang, scale) {
+  if (!canvasAvailable || !pdfjsAvailable) {
+    const parts = [];
+    if (!canvasAvailable) parts.push(`canvas_unavailable: ${stringifyErr(canvasLoadError)}`);
+    if (!pdfjsAvailable) parts.push(`pdfjs_unavailable: ${stringifyErr(pdfjsLoadError)}`);
+    throw new Error(parts.join(' | '));
+  }
   const pdfData = toUint8Array(buf);
   const loadingTask = pdfjsLib.getDocument({ data: pdfData, disableWorker: true });
   const pdf = await loadingTask.promise;
